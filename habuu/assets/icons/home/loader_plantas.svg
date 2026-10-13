@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Circle - Loader">
+<circle id="Ellipse 1" cx="18" cy="18" r="17" stroke="black" stroke-opacity="0.1" stroke-width="2"/>
+<g id="leaf">
+<path id="Vector" d="M13 27C13 27 13.5 22.5 17 18.5" stroke="#0D6174" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M25.1297 10.2422L25.7243 16.4167C26.0984 20.3026 23.1849 23.7626 19.2989 24.1367C15.486 24.5039 12.0319 21.7168 11.6648 17.9039C11.2976 14.091 14.091 10.7024 17.9039 10.3352L24.475 9.70251C24.8048 9.67074 25.098 9.91239 25.1297 10.2422Z" stroke="#0D6174" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path id="Ellipse 4" d="M18 1C20.6828 1 23.3275 1.63493 25.7178 2.85289C28.1082 4.07084 30.1764 5.83724 31.7533 8.00765C33.3302 10.1781 34.371 12.6909 34.7907 15.3406C35.2104 17.9904 34.997 20.7018 34.168 23.2533" stroke="#0D6174" stroke-width="2" stroke-linecap="round"/>
+</g>
+</svg>

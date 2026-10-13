@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Circle - Loader">
+<circle id="Ellipse 1" cx="18" cy="18" r="17" stroke="black" stroke-opacity="0.1" stroke-width="2"/>
+<g id="clean-water" clip-path="url(#clip0_0_643)">
+<path id="Vector" d="M19 27.5704C16.5996 27.8661 14.0927 27.0927 12.25 25.25C9.07437 22.0744 9.07437 16.9256 12.25 13.75L17.5757 8.42426C17.8101 8.18995 18.1899 8.18995 18.4243 8.42426L23.75 13.75C25.982 15.982 26.6453 19.1887 25.7397 22" stroke="#0D6174" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M22 26L24 28L28 24" stroke="#0D6174" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path id="Ellipse 4" d="M18 1C20.2325 1 22.4431 1.43972 24.5056 2.29405C26.5682 3.14838 28.4422 4.40059 30.0208 5.97919C31.5994 7.55778 32.8516 9.43185 33.706 11.4944C34.5603 13.5569 35 15.7675 35 18" stroke="#0D6174" stroke-width="2" stroke-linecap="round"/>
+</g>
+<defs>
+<clipPath id="clip0_0_643">
+<rect width="24" height="24" fill="white" transform="translate(6 6)"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Circle - Loader">
+<circle id="Ellipse 1" cx="18" cy="18" r="17" stroke="black" stroke-opacity="0.1" stroke-width="2"/>
+<g id="running">
+<path id="Vector" d="M21 13C22.1046 13 23 12.1046 23 11C23 9.89543 22.1046 9 21 9C19.8954 9 19 9.89543 19 11C19 12.1046 19.8954 13 21 13Z" stroke="#0D6174" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M18.6129 14.2669L15.3047 18.4021L19.4399 22.5374L17.3723 27.0861" stroke="#0D6174" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M12.4102 15.5075L15.797 12.1993L18.613 14.2669L21.5077 17.5752H25.2294" stroke="#0D6174" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M14.8925 21.7103L13.6519 22.5374H10.3438" stroke="#0D6174" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path id="Ellipse 4" d="M18 1C20.2325 1 22.4431 1.43972 24.5056 2.29405C26.5682 3.14838 28.4422 4.40059 30.0208 5.97919C31.5994 7.55778 32.8516 9.43185 33.706 11.4944C34.5603 13.5569 35 15.7675 35 18" stroke="#0D6174" stroke-width="2" stroke-linecap="round"/>
+</g>
+</svg>
