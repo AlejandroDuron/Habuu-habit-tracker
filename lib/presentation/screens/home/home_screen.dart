@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'theme/habuu_tokens.dart';
-import 'widgets/habuu_navbar.dart';
+import '../../../config/theme/tokens.dart';
+import '../../widgets/shared/navbar.dart';
 
 /// Pantalla Home de Habuu.
 class HomePage extends StatelessWidget {

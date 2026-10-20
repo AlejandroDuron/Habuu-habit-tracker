@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../theme/habuu_tokens.dart';
+import '../../../config/theme/tokens.dart';
 
 /// Pestañas de la barra de navegación inferior, en orden de aparición.
 enum HabuuTab {

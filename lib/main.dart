@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'home_page.dart';
-import 'landing_page.dart';
+import '/presentation/screens/home/home_screen.dart';
+import '/presentation/screens/landing/landing_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
