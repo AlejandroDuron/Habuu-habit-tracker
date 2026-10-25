@@ -66,8 +66,6 @@ class LandingPage extends StatelessWidget {
                   right: 0,
                   child: Text.rich(
                     TextSpan(
-                      // Texto idéntico al diseño (incluye "habitos" sin tilde).
-                      // Si lo quieres corregir: "hábitos".
                       text: 'Deja que ',
                       children: const [
                         TextSpan(

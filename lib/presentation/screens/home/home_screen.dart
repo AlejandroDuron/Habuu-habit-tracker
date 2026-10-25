@@ -24,8 +24,6 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
-      bottomNavigationBar: const HabuuNavbar(selected: HabuuTab.home),
       body: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: LinearGradient(

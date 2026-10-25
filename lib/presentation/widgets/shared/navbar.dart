@@ -1,37 +1,33 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../config/theme/tokens.dart';
 
-/// Pestañas de la barra de navegación inferior, en orden de aparición.
 enum HabuuTab {
-  home('home'),
-  calendar('calendar'),
-  add('plus'),
-  profile('profile');
+  home('home', 'Inicio'),
+  calendar('calendar', 'Calendario'),
+  add('plus', 'Agregar'),
+  profile('profile', 'Perfil');
 
-  const HabuuTab(this.icon);
+  const HabuuTab(this.icon, this.label);
 
   final String icon;
+  final String label;
 }
 
-/// Barra de navegación inferior de Habuu.
-///
-/// Debe usarse como `bottomNavigationBar` de un [Scaffold] con `extendBody: true`
-/// para que el fondo de la pantalla se vea detrás de la barra translúcida.
-/// El contenido debe dejar [HabuuNavbar.bodyBottomInsetOf] libre abajo.
 class HabuuNavbar extends StatelessWidget {
-  const HabuuNavbar({super.key, required this.selected, this.onTabSelected});
+  const HabuuNavbar({
+    super.key,
+    required this.selected,
+    required this.onTabSelected,
+  });
 
-  /// Pestaña marcada con el indicador superior.
   final HabuuTab selected;
-
-  final ValueChanged<HabuuTab>? onTabSelected;
+  final ValueChanged<HabuuTab> onTabSelected;
 
   static const double height = 69;
 
-  /// Espacio que el contenido debe dejar libre abajo para no quedar detrás
-  /// de la barra: 75px como en Figma, más el área del sistema si existe.
   static double bodyBottomInsetOf(BuildContext context) =>
       75 + MediaQuery.viewPaddingOf(context).bottom;
 
@@ -41,10 +37,17 @@ class HabuuNavbar extends StatelessWidget {
 
     return Container(
       height: height + bottomInset,
-      padding: EdgeInsets.fromLTRB(36, 8, 36, 8 + bottomInset),
+      padding: EdgeInsets.fromLTRB(
+        36,
+        8,
+        36,
+        8 + bottomInset,
+      ),
       decoration: const BoxDecoration(
         color: HabuuColors.white80,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,7 +57,7 @@ class HabuuNavbar extends StatelessWidget {
               child: _NavbarItem(
                 tab: tab,
                 isSelected: tab == selected,
-                onTap: onTabSelected == null ? null : () => onTabSelected!(tab),
+                onTap: () => onTabSelected(tab),
               ),
             ),
         ],
@@ -64,34 +67,51 @@ class HabuuNavbar extends StatelessWidget {
 }
 
 class _NavbarItem extends StatelessWidget {
-  const _NavbarItem({required this.tab, required this.isSelected, this.onTap});
+  const _NavbarItem({
+    required this.tab,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   final HabuuTab tab;
   final bool isSelected;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            height: 4,
-            color: isSelected ? HabuuColors.primary500 : Colors.transparent,
-          ),
-          SizedBox(
-            height: 44,
-            child: Center(
-              child: SvgPicture.asset(
-                'assets/icons/navbar/${tab.icon}.svg',
-                width: 24,
-                height: 24,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: tab.label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          height: 52,
+          child: Column(
+            children: [
+              Container(
+                height: 4,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? HabuuColors.primary500
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
+              Expanded(
+                child: Center(
+                  child: SvgPicture.asset(
+                    'assets/icons/navbar/${tab.icon}.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
