@@ -30,7 +30,14 @@ class HabuuApp extends StatelessWidget {
       navigatorKey: _navigatorKey,
       title: 'Habuu',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true),
+        theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: Colors.white,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.white,
+          surface: Colors.white,
+        ),
+      ),
       home: LandingPage(
         onLogin: () {
           _navigatorKey.currentState?.pushReplacement(
