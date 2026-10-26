@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/thophies/trophy_card.dart'; 
+import '../../../config/theme/tokens.dart';
 
 class _Trophy {
   const _Trophy(this.title, this.imagePath);
@@ -11,7 +11,7 @@ class _Trophy {
 class TrophiesScreen extends StatelessWidget {
   const TrophiesScreen({super.key});
 
-  static const Color _textDark = Color(0xFF1D4452);
+  static const Color _textDark = HabuuColors.success800;
 
   // TODO: reemplazar por datos reales
   static const _earned = [
@@ -33,13 +33,7 @@ class TrophiesScreen extends StatelessWidget {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFBDE3D0), Color(0xFFA3D3E3)],
-          ),
-        ),
+        decoration: const BoxDecoration(gradient: HabuuGradients.mintToSky),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
@@ -79,10 +73,9 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: GoogleFonts.plusJakartaSans(
+      style: HabuuText.h5ExtraBold.copyWith(
         fontSize: 22,
-        fontWeight: FontWeight.w800,
-        color: const Color(0xFF1D4452),
+        color: HabuuColors.success800,
       ),
     );
   }

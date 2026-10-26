@@ -23,7 +23,7 @@ class TrophiesSummary extends StatelessWidget {
         Text(
           'Trofeos Ganados',
           textAlign: TextAlign.center,
-          style: HabuuText.h6ExtraBold.copyWith(
+          style: HabuuText.h5ExtraBold.copyWith(
             fontSize: 20,
             color: HabuuColors.success700,
           ),

@@ -399,7 +399,7 @@ class _HabitCard extends StatelessWidget {
                 Container(
                   width: c.maxWidth * progressFraction!,
                   decoration: BoxDecoration(
-                    color: HabuuColors.green700,
+                    color: HabuuColors.primary400,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),

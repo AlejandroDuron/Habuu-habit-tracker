@@ -12,6 +12,8 @@ class StreakHeader extends StatelessWidget {
   final int streakCount;
   final String message;
 
+  static const Color _textDark = HabuuColors.success800;
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -24,6 +26,7 @@ class StreakHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Froggy centrado
           Center(
             child: Image.asset(
               'assets/images/frog_button.png',
@@ -32,6 +35,8 @@ class StreakHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
+
+          // Texto + patito
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -41,19 +46,21 @@ class StreakHeader extends StatelessWidget {
                   children: [
                     Text(
                       '$streakCount',
-                      style: HabuuText.h5ExtraBold.copyWith(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 56,
                         height: 1.0,
-                        color: HabuuColors.success800,
+                        fontWeight: FontWeight.w800,
+                        color: _textDark,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       streakCount == 1 ? 'Día de racha' : 'Días de racha',
-                      style: HabuuText.h5ExtraBold.copyWith(
-                        fontWeight: FontWeight.w700,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 32,
                         height: 1.1,
-                        color: HabuuColors.success800,
+                        fontWeight: FontWeight.w700,
+                        color: _textDark,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -63,14 +70,14 @@ class StreakHeader extends StatelessWidget {
                         fontSize: 16,
                         height: 1.3,
                         fontWeight: FontWeight.w700,
-                        color: HabuuColors.success800,
+                        color: _textDark,
                       ),
                     ),
                   ],
                 ),
               ),
               Image.asset(
-                'assets/images/duck.png',
+                 'assets/images/frog_button.png',
                 height: 64,
                 fit: BoxFit.contain,
               ),

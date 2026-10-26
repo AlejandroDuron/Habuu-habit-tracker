@@ -11,13 +11,11 @@ class ChangePasswordScreen extends StatefulWidget {
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   static const String _helpText =
       'Mínimo 8 caracteres, con mayúsculas, números y símbolos';
+  static const String _hint = '****************';
 
   final _formKey = GlobalKey<FormState>();
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
-
-  bool _hideNew = true;
-  bool _hideConfirm = true;
 
   @override
   void dispose() {
@@ -46,7 +44,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   void _save() {
     if (!_formKey.currentState!.validate()) return;
-    // TODO: llamar a tu servicio para cambiar la contraseña
+    // TODO: llamar a supabase para cambiar la contraseña
     Navigator.pop(context);
   }
 
@@ -59,7 +57,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         decoration: const BoxDecoration(gradient: HabuuGradients.skyToMint),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            padding: const EdgeInsets.fromLTRB(30, 0, 30, 24),
             child: Form(
               key: _formKey,
               child: Column(
@@ -70,35 +68,32 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     alignment: Alignment.centerLeft,
                     icon: const Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: HabuuColors.iconBlack,
+                      color: HabuuIconColors.black,
                       size: 22,
                     ),
                     onPressed: () => Navigator.pop(context),
                     tooltip: 'Volver',
                   ),
-                  const SizedBox(height: 8),
                   Image.asset(
                     'assets/images/froggy_password.png',
                     width: double.infinity,
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 16),
-                  Text('Cambiar\ncontraseña', style: HabuuText.h4ExtraBold),
-                  const SizedBox(height: 32),
+                  Text('Cambiar\ncontraseña', style: HabuuText.h5ExtraBold),
+                  const SizedBox(height: 40),
 
                   _label('Nueva contraseña'),
                   const SizedBox(height: 8),
                   _passwordField(
                     controller: _newController,
-                    hidden: _hideNew,
-                    onToggle: () => setState(() => _hideNew = !_hideNew),
                     validator: _validateNew,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     _helpText,
                     style: HabuuText.bodySmMedium.copyWith(
-                      color: HabuuColors.grey500,
+                      color: HabuuTextColors.secondaryGrey,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -107,17 +102,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   const SizedBox(height: 8),
                   _passwordField(
                     controller: _confirmController,
-                    hidden: _hideConfirm,
-                    onToggle: () =>
-                        setState(() => _hideConfirm = !_hideConfirm),
                     validator: _validateConfirm,
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
 
                   Center(
                     child: SizedBox(
-                      width: 310,
-                      height: 56,
+                      width: 240,
+                      height: 54,
                       child: ElevatedButton(
                         onPressed: _save,
                         style: ElevatedButton.styleFrom(
@@ -149,14 +141,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget _label(String text) {
     return Text(
       text,
-      style: HabuuText.subtitleMdBold.copyWith(color: HabuuColors.iconBlack),
+      style: HabuuText.subtitleMdBold.copyWith(color: HabuuIconColors.black),
     );
   }
 
   Widget _passwordField({
     required TextEditingController controller,
-    required bool hidden,
-    required VoidCallback onToggle,
     required String? Function(String?) validator,
   }) {
     OutlineInputBorder border(Color color) => OutlineInputBorder(
@@ -166,26 +156,24 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     return TextFormField(
       controller: controller,
-      obscureText: hidden,
+      obscureText: true,
       validator: validator,
-      style: HabuuText.subtitleSmMedium,
+      style: HabuuText.bodySmMedium,
       decoration: InputDecoration(
+        isDense: true,
         filled: true,
-        fillColor: HabuuColors.field,
+        fillColor: HabuuColors.grey0,
+        hintText: _hint,
+        hintStyle: HabuuText.captionMdMedium.copyWith(
+          color: HabuuColors.grey400,
+        ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         enabledBorder: border(HabuuColors.primary200),
         focusedBorder: border(HabuuColors.primary500),
         errorBorder: border(Colors.red.shade400),
         focusedErrorBorder: border(Colors.red.shade400),
         errorMaxLines: 2,
-        suffixIcon: IconButton(
-          icon: Icon(
-            hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            color: HabuuColors.grey500,
-          ),
-          onPressed: onToggle,
-        ),
       ),
     );
   }
