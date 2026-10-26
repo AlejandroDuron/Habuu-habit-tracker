@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../../../config/theme/tokens.dart';
-import '../../widgets/shared/navbar.dart';
 
 /// Pantalla Home de Habuu.
 class HomePage extends StatelessWidget {
@@ -34,11 +32,7 @@ class HomePage extends StatelessWidget {
           ),
         ),
         // El contenido termina antes de la navbar y no se ve detrás de ella.
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: HabuuNavbar.bodyBottomInsetOf(context),
-          ),
-          child: SingleChildScrollView(
+        child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(35, 76, 35, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -95,8 +89,7 @@ class HomePage extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _header() {

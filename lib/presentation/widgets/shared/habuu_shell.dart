@@ -33,7 +33,7 @@ class _HabuuShellState extends State<HabuuShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
+      extendBody: false,
       body: IndexedStack(
         index: _selectedTab.index,
         children: _pages,

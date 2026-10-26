@@ -61,6 +61,9 @@ abstract final class HabuuText {
 
   /// Text Font/Caption/sm/Medium — 10/12.
   static TextStyle get captionSmMedium => _body(10, 12, FontWeight.w500);
+  
+  /// Text Font/Body/sm/medium — 14/18.
+  static TextStyle get bodySmMedium => _body(14, 18, FontWeight.w500);
 }
 
 /// Shadows/Box Shadow del design system.
