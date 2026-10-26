@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Colores predeyterminados del proyecto.
+/// Colores predeterminados del proyecto.
 abstract final class HabuuColors {
   static const primary50 = Color(0xFFB0E1CE);
   static const primary200 = Color(0xFF7BB29C);
@@ -15,7 +15,10 @@ abstract final class HabuuColors {
   static const success800 = Color(0xFF08404D);
 
   static const info300 = Color(0xFFF8C9D0);
+  static const grey100 = Color(0xFFE0E0E0); // trofeos bloqueados
   static const grey400 = Color(0xFF9DA1A2);
+  static const grey500 = Color(0xFF6B6B6B); // textos de ayuda
+  static const field = Color(0xFFFAFAFA); // fondo de inputs
   static const purple50 = Color(0xFFFCF7FF);
   static const green700 = Color(0xFF308242);
   static const iconBlack = Color(0xFF303233);
@@ -26,6 +29,23 @@ abstract final class HabuuColors {
   static const white100 = Color(0xFFFFFFFF);
   static const white80 = Color(0xCCFFFFFF);
   static const white40 = Color(0x66FFFFFF);
+}
+
+/// Degradados del proyecto.
+abstract final class HabuuGradients {
+  /// Menta → celeste. Header de racha y pantalla de trofeos.
+  static const mintToSky = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [HabuuColors.primary50, HabuuColors.success200],
+  );
+
+  /// Celeste → menta. Pantalla de cambiar contraseña.
+  static const skyToMint = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [HabuuColors.success0, HabuuColors.primary50],
+  );
 }
 
 /// Estilos de texto del design system.
@@ -39,13 +59,29 @@ abstract final class HabuuText {
         color: HabuuColors.black100,
       );
 
+  /// Text Font/H4/Extra Bold — 40/44.
+  static TextStyle get h4ExtraBold => GoogleFonts.plusJakartaSans(
+        fontSize: 40,
+        height: 44 / 40,
+        fontWeight: FontWeight.w800,
+        color: HabuuColors.black100,
+      );
+
   /// Text Font/H5/Extra Bold — 32/36.
   static TextStyle get h5ExtraBold => GoogleFonts.plusJakartaSans(
-    fontSize: 32,
-    height: 36 / 32,
-    fontWeight: FontWeight.w800,
-    color: HabuuColors.black100,
-  );
+        fontSize: 32,
+        height: 36 / 32,
+        fontWeight: FontWeight.w800,
+        color: HabuuColors.black100,
+      );
+
+  /// Text Font/H6/Extra Bold — 22/28 (títulos de sección).
+  static TextStyle get h6ExtraBold => GoogleFonts.plusJakartaSans(
+        fontSize: 22,
+        height: 28 / 22,
+        fontWeight: FontWeight.w800,
+        color: HabuuColors.black100,
+      );
 
   /// Text Font/Subtitle/md/Bold — 20/28.
   static TextStyle get subtitleMdBold => _body(20, 28, FontWeight.w700);
@@ -56,14 +92,14 @@ abstract final class HabuuText {
   /// Text Font/Body/sm/semibold — 14/18.
   static TextStyle get bodySmSemibold => _body(14, 18, FontWeight.w600);
 
+  /// Text Font/Body/sm/medium — 14/18.
+  static TextStyle get bodySmMedium => _body(14, 18, FontWeight.w500);
+
   /// Text Font/Caption/md/Medium — 12/16.
   static TextStyle get captionMdMedium => _body(12, 16, FontWeight.w500);
 
   /// Text Font/Caption/sm/Medium — 10/12.
   static TextStyle get captionSmMedium => _body(10, 12, FontWeight.w500);
-  
-  /// Text Font/Body/sm/medium — 14/18.
-  static TextStyle get bodySmMedium => _body(14, 18, FontWeight.w500);
 }
 
 /// Shadows/Box Shadow del design system.

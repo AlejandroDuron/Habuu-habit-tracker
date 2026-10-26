@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../config/theme/tokens.dart';
 
 class StreakHeader extends StatelessWidget {
   const StreakHeader({
@@ -11,8 +12,6 @@ class StreakHeader extends StatelessWidget {
   final int streakCount;
   final String message;
 
-  static const Color _textDark = Color(0xFF1D4452);
-
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -20,21 +19,11 @@ class StreakHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(24, topPadding + 24, 24, 32),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFBDE3D0), // verde menta arriba
-            Color(0xFFA3D3E3), // azul claro abajo
-          ],
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: HabuuGradients.mintToSky),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Froggy centrado
           Center(
             child: Image.asset(
               'assets/images/frog_button.png',
@@ -43,8 +32,6 @@ class StreakHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-
-          // Texto + patito
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -54,21 +41,19 @@ class StreakHeader extends StatelessWidget {
                   children: [
                     Text(
                       '$streakCount',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: HabuuText.h5ExtraBold.copyWith(
                         fontSize: 56,
                         height: 1.0,
-                        fontWeight: FontWeight.w800,
-                        color: _textDark,
+                        color: HabuuColors.success800,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       streakCount == 1 ? 'Día de racha' : 'Días de racha',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 32,
-                        height: 1.1,
+                      style: HabuuText.h5ExtraBold.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: _textDark,
+                        height: 1.1,
+                        color: HabuuColors.success800,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -78,14 +63,14 @@ class StreakHeader extends StatelessWidget {
                         fontSize: 16,
                         height: 1.3,
                         fontWeight: FontWeight.w700,
-                        color: _textDark,
+                        color: HabuuColors.success800,
                       ),
                     ),
                   ],
                 ),
               ),
               Image.asset(
-                 'assets/images/frog_button.png',
+                'assets/images/duck.png',
                 height: 64,
                 fit: BoxFit.contain,
               ),

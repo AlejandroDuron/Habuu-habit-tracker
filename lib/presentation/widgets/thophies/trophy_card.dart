@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../config/theme/tokens.dart';
 
 class TrophyCard extends StatelessWidget {
   const TrophyCard({
@@ -18,10 +18,6 @@ class TrophyCard extends StatelessWidget {
 
   /// Si es true, se muestra en gris (trofeo aún no ganado).
   final bool locked;
-
-  static const Color _circleBg = Color(0xFFD6EDF5);
-  static const Color _lockedBg = Color(0xFFE0E0E0);
-  static const Color _textDark = Color(0xFF1D4452);
 
   // Convierte la imagen a escala de grises
   static const ColorFilter _grayscale = ColorFilter.matrix(<double>[
@@ -46,7 +42,7 @@ class TrophyCard extends StatelessWidget {
           height: size,
           padding: EdgeInsets.all(size * 0.12),
           decoration: BoxDecoration(
-            color: locked ? _lockedBg : _circleBg,
+            color: locked ? HabuuColors.grey100 : HabuuColors.success0,
             shape: BoxShape.circle,
           ),
           child: image,
@@ -55,10 +51,8 @@ class TrophyCard extends StatelessWidget {
         Text(
           title,
           textAlign: TextAlign.center,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: _textDark,
+          style: HabuuText.bodySmMedium.copyWith(
+            color: HabuuColors.success800,
           ),
         ),
         if (description != null) ...[
@@ -66,10 +60,8 @@ class TrophyCard extends StatelessWidget {
           Text(
             description!,
             textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: _textDark.withValues(alpha: 0.7),
+            style: HabuuText.captionMdMedium.copyWith(
+              color: HabuuColors.success800.withValues(alpha: 0.7),
             ),
           ),
         ],
