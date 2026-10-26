@@ -8,19 +8,28 @@ class StreakScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
-        child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            StreakHeader(streakCount: 5),
-            SizedBox(height: 16),
-            Calendar(),
-            SizedBox(height: 16),
-            TrophiesSummary(trophiesCount: 3),
-          ],
-        ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const StreakHeader(streakCount: 5),
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Calendar(
+              streakDays: {
+                for (var i = 0; i < 5; i++)
+                  DateTime.now().subtract(Duration(days: i)),
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: TrophiesSummary(trophiesCount: 3),
+          ),
+        ],
       ),
     );
   }

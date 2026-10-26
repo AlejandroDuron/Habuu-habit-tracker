@@ -1,46 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../config/theme/tokens.dart';
 
 class TrophyCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final String imagePath;
-
   const TrophyCard({
     super.key,
     required this.title,
-    required this.description,
     required this.imagePath,
+    this.description,
+    this.size = 100,
   });
+
+  final String title;
+  final String imagePath;
+
+  /// Opcional: si es null, no se muestra.
+  final String? description;
+
+  /// Diámetro del círculo.
+  final double size;
+
+  static const Color _circleBg = Color(0xFFD6EDF5);
+  static const Color _textDark = Color(0xFF1D4452);
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(imagePath, height: 100),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: HabuuText.bodySmMedium,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: HabuuText.bodySmMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: size,
+          height: size,
+          padding: EdgeInsets.all(size * 0.12),
+          decoration: const BoxDecoration(
+            color: _circleBg,
+            shape: BoxShape.circle,
+          ),
+          child: Image.asset(imagePath, fit: BoxFit.contain),
         ),
-      ),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: _textDark,
+          ),
+        ),
+        if (description != null) ...[
+          const SizedBox(height: 4),
+          SizedBox(
+            width: size + 40,
+            child: Text(
+              description!,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: _textDark.withOpacity(0.7),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

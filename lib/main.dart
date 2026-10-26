@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import '/presentation/screens/landing/landing_screen.dart';
 import '/presentation/widgets/shared/habuu_shell.dart';
 
 final GlobalKey<NavigatorState> _navigatorKey =
     GlobalKey<NavigatorState>();
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es_ES');
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
