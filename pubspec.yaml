@@ -94,3 +94,5 @@ flutter:
     - assets/images/home/
     - assets/icons/home/
     - assets/icons/navbar/
+    - assets/images/auth/
+    - assets/icons/auth/
