@@ -12,16 +12,11 @@ class HabitsProvider extends ChangeNotifier {
   List<Habit> _habits = [];
   bool _isLoading = false;
   String? _errorMessage;
- 
-  // Getters públicos. La lista se entrega sin poder modificarse, para que
-  // todos los cambios pasen por los métodos de aquí y siempre se avise
-  // con notifyListeners().
+
   List<Habit> get habits => List.unmodifiable(_habits);
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
- 
-  // Valores derivados: se calculan de _habits cada vez que se piden, así
-  // nunca quedan desincronizados (lo de "derivado frente a paralelo").
+  
   List<Habit> get frequentHabits =>
       _habits.where((h) => h.type == HabitType.frecuente).toList();
  
@@ -30,7 +25,7 @@ class HabitsProvider extends ChangeNotifier {
  
   /// Busca un hábito por id. Devuelve null si no lo encuentra, en vez de
   /// lanzar un error, porque la pantalla de editar puede abrirse con un
-  /// hábito que alguien ya borró.
+  /// hábito que alguien ya borró
   Habit? findById(String id) {
     for (final habit in _habits) {
       if (habit.id == id) return habit;
@@ -38,7 +33,7 @@ class HabitsProvider extends ChangeNotifier {
     return null;
   }
  
-  /// Carga los hábitos desde el repository. Se llama una vez al iniciar la app.
+  /// Carga los hábitos desde el repository. Se llama una vez al iniciar la app
   Future<void> loadHabits() async {
     _isLoading = true;
     _errorMessage = null;
@@ -56,11 +51,11 @@ class HabitsProvider extends ChangeNotifier {
   }
  
   /// Guarda un hábito nuevo. Devuelve true si salió bien, para que la
-  /// pantalla sepa si mostrar "Hábito creado correctamente".
+  /// pantalla sepa si mostrar:
   Future<bool> addHabit(Habit habit) async {
     try {
       final saved = await _repository.createHabit(habit);
-      // Lo ponemos al inicio para respetar el orden "más nuevo primero".
+      // Lo ponemos al inicio para respetar el orden del mas reciente
       _habits = [saved, ..._habits];
       _errorMessage = null;
       notifyListeners();
@@ -84,7 +79,6 @@ class HabitsProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } on HabitNotFoundException {
-      // Error con nombre propio: sabemos exactamente qué pasó.
       _errorMessage = 'Ese hábito ya no existe';
       notifyListeners();
       return false;
@@ -94,6 +88,32 @@ class HabitsProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+ 
+  /// Cambia el orden de un hábito dentro de su lista cuando el usuario lo arrastra.
+  /// oldIndex y newIndex son posiciones dentro de esa lista filtrada, no
+  /// dentro de _habits; por eso los hábitos del otro tipo se quedan
+  /// donde estaban.
+  void reorderHabits(HabitType type, int oldIndex, int newIndex) {
+    final sameType = _habits.where((h) => h.type == type).toList();
+    if (oldIndex == newIndex ||
+        oldIndex < 0 ||
+        oldIndex >= sameType.length ||
+        newIndex < 0 ||
+        newIndex >= sameType.length) {
+      return;
+    }
+ 
+    final moved = sameType.removeAt(oldIndex);
+    sameType.insert(newIndex, moved);
+ 
+    // cada vez que aparece un hábito
+    // de este tipo, ponemos el siguiente de la lista ya ordenada
+    var next = 0;
+    _habits = [
+      for (final h in _habits) h.type == type ? sameType[next++] : h,
+    ];
+    notifyListeners();
   }
  
   /// Borra un hábito. Da true si salió bien
