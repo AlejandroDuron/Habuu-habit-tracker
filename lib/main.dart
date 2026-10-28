@@ -19,7 +19,7 @@ Future<void> main() async {
   await Supabase.initialize(
     url: const String.fromEnvironment('SUPABASE_URL'),
     publishableKey: const String.fromEnvironment('SUPABASE_KEY'),
-  );xs
+  );
  
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
