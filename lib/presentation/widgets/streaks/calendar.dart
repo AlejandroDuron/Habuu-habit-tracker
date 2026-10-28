@@ -24,7 +24,7 @@ class _CalendarState extends State<Calendar> {
   static const Color _dayText = HabuuColors.grey400;
   static const Color _dark = HabuuColors.success800;
 
-  static const _weekLetters = ['L', 'M', 'M', 'J', 'V', 'D', 'S'];
+  static const _weekLetters = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
   DateTime _focusedDay = DateTime.now();
 

@@ -7,13 +7,19 @@ import '/data/repositories/habit_repository.dart';
 import '/presentation/providers/habits_provider.dart';
 import '/presentation/screens/landing/landing_screen.dart';
 import '/presentation/widgets/shared/habuu_shell.dart';
- 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 final GlobalKey<NavigatorState> _navigatorKey =
     GlobalKey<NavigatorState>();
  
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es_ES');
+
+  await Supabase.initialize(
+    url: const String.fromEnvironment('SUPABASE_URL'),
+    publishableKey: const String.fromEnvironment('SUPABASE_KEY'),
+  );xs
  
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

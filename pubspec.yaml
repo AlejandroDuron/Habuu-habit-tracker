@@ -36,6 +36,7 @@ dependencies:
   intl: any
   table_calendar: ^3.1.2
   provider: ^6.1.5
+  supabase_flutter: ^2.18.3
  
 dev_dependencies:
   flutter_test:
