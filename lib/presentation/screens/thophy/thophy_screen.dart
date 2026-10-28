@@ -15,16 +15,16 @@ class TrophiesScreen extends StatelessWidget {
 
   // TODO: reemplazar por datos reales
   static const _earned = [
-    _Trophy('Día completado', 'assets/images/frog_mushroom.png'),
+    _Trophy('Día completado', 'assets/images/calendar/day_completed.png'),
   ];
 
   static const _locked = [
-    _Trophy('7 días de racha', 'assets/images/frog_mushroom.png'),
-    _Trophy('Hábitos nuevos', 'assets/images/frog_mushroom.png'),
-    _Trophy('14+ rachas', 'assets/images/frog_mushroom.png'),
-    _Trophy('Disciplina', 'assets/images/frog_mushroom.png'),
-    _Trophy('1+ mes con Habuu', 'assets/images/frog_mushroom.png'),
-    _Trophy('300 rachas', 'assets/images/frog_mushroom.png'),
+    _Trophy('7 días de racha', 'assets/images/calendar/streak_7.png'),
+    _Trophy('Hábitos nuevos', 'assets/images/calendar/new_habits.png'),
+    _Trophy('14+ rachas', 'assets/images/calendar/streak_14.png'),
+    _Trophy('Disciplina', 'assets/images/calendar/discipline.png'),
+    _Trophy('1+ mes con Habuu', 'assets/images/calendar/one_month.png'),
+    _Trophy('300 rachas', 'assets/images/calendar/streak_300.png'),
   ];
 
   @override

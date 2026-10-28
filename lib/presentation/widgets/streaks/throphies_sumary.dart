@@ -7,7 +7,7 @@ class TrophiesSummary extends StatelessWidget {
   const TrophiesSummary({
     super.key,
     required this.trophiesCount,
-    this.latestTrophyImage = 'assets/images/trophy_day_completed.png',
+    this.latestTrophyImage = 'assets/images/calendar/day_completed.png',
     this.latestTrophyLabel = 'Día completado',
   });
 

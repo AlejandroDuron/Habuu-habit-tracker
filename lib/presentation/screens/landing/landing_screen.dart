@@ -48,7 +48,7 @@ class LandingPage extends StatelessWidget {
                   right: 0,
                   bottom: 0,
                   child: Image.asset(
-                    'assets/images/scenery.png',
+                    'assets/images/landing/scenery.png',
                     width: constraints.maxWidth,
                     fit: BoxFit.fitWidth,
                     filterQuality: FilterQuality.high,
@@ -56,8 +56,8 @@ class LandingPage extends StatelessWidget {
                 ),
 
                 // Libélulas laterales.
-                _sprite('dragonfly_left', s, left: 6, top: 396, w: 54),
-                _sprite('dragonfly_right', s, left: 372, top: 404, w: 42),
+                _sprite('assets/images/landing/dragonfly_left.png', s, left: 6, top: 396, w: 54),
+                _sprite('assets/images/landing/dragonfly_right.png', s, left: 372, top: 404, w: 42),
 
                 // Título.
                 Positioned(
@@ -116,8 +116,8 @@ class LandingPage extends StatelessWidget {
                 ),
 
                 // Ranas (van encima de los botones).
-                _sprite('frog_button', s, left: 284, top: 232, w: 68),
-                _sprite('frog_mushroom', s, left: 96, top: 398, w: 62),
+                _sprite('assets/images/calendar/one_month.png', s, left: 284, top: 232, w: 68),
+                _sprite('assets/images/calendar/discipline.png', s, left: 96, top: 398, w: 62),
               ],
             ),
           );
@@ -127,7 +127,7 @@ class LandingPage extends StatelessWidget {
   }
 
   Widget _sprite(
-    String name,
+    String path,
     double s, {
     required double left,
     required double top,
@@ -139,7 +139,7 @@ class LandingPage extends StatelessWidget {
       width: w * s,
       child: IgnorePointer(
         child: Image.asset(
-          'assets/images/$name.png',
+          path,
           fit: BoxFit.fitWidth,
           filterQuality: FilterQuality.high,
         ),

@@ -29,7 +29,7 @@ class StreakHeader extends StatelessWidget {
           // Froggy centrado
           Center(
             child: Image.asset(
-              'assets/images/frog_button.png',
+              'assets/images/calendar/streak_14.png',
               height: 160,
               fit: BoxFit.contain,
             ),
@@ -77,7 +77,7 @@ class StreakHeader extends StatelessWidget {
                 ),
               ),
               Image.asset(
-                 'assets/images/frog_button.png',
+                 'assets/images/calendar/streak_7.png',
                 height: 64,
                 fit: BoxFit.contain,
               ),

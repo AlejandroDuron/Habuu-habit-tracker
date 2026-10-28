@@ -75,7 +75,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     tooltip: 'Volver',
                   ),
                   Image.asset(
-                    'assets/images/froggy_password.png',
+                    'assets/images/auth/frog police password green.png',
                     width: double.infinity,
                     fit: BoxFit.contain,
                   ),
