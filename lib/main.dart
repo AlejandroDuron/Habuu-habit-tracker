@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
-import '/config/routes.dart';
+import '/config/routes.dart'; // AUTH
 import '/data/datasources/in_memory_habit_data_source.dart';
 import '/data/repositories/habit_repository.dart';
-import '/presentation/providers/auth_provider.dart';
+import '/presentation/providers/auth_provider.dart'; // AUTH
 import '/presentation/providers/habits_provider.dart';
 import '/presentation/screens/landing/landing_screen.dart';
-import '/presentation/screens/landing/onboarding_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final GlobalKey<NavigatorState> _navigatorKey =
@@ -63,19 +62,11 @@ class HabuuApp extends StatelessWidget {
         ),
       ),
       routes: AppRoutes.routes,
-      home: OnboardingScreen(
-        onFinish: () => _navigatorKey.currentState?.pushReplacement(
-          MaterialPageRoute(builder: (_) => _buildLanding()),
-        ),
+      home: LandingPage(
+        onLogin: () => _navigatorKey.currentState?.pushNamed(AppRoutes.login),
+        onCreateAccount: () =>
+            _navigatorKey.currentState?.pushNamed(AppRoutes.register),
       ),
-    );
-  }
-
-  Widget _buildLanding() {
-    return LandingPage(
-      onLogin: () => _navigatorKey.currentState?.pushNamed(AppRoutes.login),
-      onCreateAccount: () =>
-          _navigatorKey.currentState?.pushNamed(AppRoutes.register),
     );
   }
 }

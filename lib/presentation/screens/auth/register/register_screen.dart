@@ -6,6 +6,7 @@ import 'package:habuu/config/assets.dart';
 import 'package:habuu/config/theme/tokens.dart';
 import 'package:habuu/presentation/screens/auth/verification/account_verified_screen.dart';
 import 'package:habuu/presentation/screens/auth/verification/code_verification_screen.dart';
+import 'package:habuu/presentation/screens/landing/onboarding_screen.dart';
 import 'package:habuu/presentation/widgets/auth/auth_button.dart';
 import 'package:habuu/presentation/widgets/auth/auth_scaffold.dart';
 import 'package:habuu/presentation/widgets/auth/auth_text_field.dart';
@@ -63,8 +64,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _showVerified(BuildContext context) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => AccountVerifiedScreen(onFinished: _goHome),
+        builder: (_) => AccountVerifiedScreen(onFinished: _showOnboarding),
       ),
+    );
+  }
+
+  /// Cuenta verificada -> onboarding -> home.
+  void _showOnboarding(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (onboardingContext) => OnboardingScreen(
+          onFinish: () => _goHome(onboardingContext),
+        ),
+      ),
+      (route) => false,
     );
   }
 
