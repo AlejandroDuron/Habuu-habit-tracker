@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../config/theme/tokens.dart';
-
+import '../../../../config/routes.dart';
+import '../../../providers/auth_provider.dart';
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
 
@@ -42,10 +44,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     return null;
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    // TODO: llamar a supabase para cambiar la contraseña
-    Navigator.pop(context);
+    final auth = context.read<AuthProvider>();
+    final ok = await auth.changePassword(_newController.text);
+    if (!mounted) return;
+    if (!ok) return; // TODO: mostrar auth.errorMessage
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      AppRoutes.login,
+      (route) => route.isFirst,
+    );
   }
 
   @override
