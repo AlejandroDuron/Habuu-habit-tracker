@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../screens/habits/habit_form_screen.dart';
-import '../../screens/habits/habits_screen.dart';
+import '../../screens/habits/habits_list_screen.dart';
 import '../../screens/home/home_screen.dart';
 import '../../screens/streaks/streaks_screen.dart';
 import '../../widgets/shared/navbar.dart';
@@ -30,30 +29,13 @@ class _HabuuShellState extends State<HabuuShell> {
     Navigator(
       key: _addNavKey,
       onGenerateRoute: (_) => MaterialPageRoute(
-        builder: (_) => HabitFormScreen(
-          onBack: _goHome,
-          // Después de crear un hábito y darle "Aceptar", mostramos la
-          // lista para que el usuario vea su hábito nuevo
-          onSaved: _openHabits,
-        ),
+        builder: (_) => const HabitsListScreen(),
       ),
     ),
     const Center(child: Text('Perfil')),
   ];
 
-  void _openHabits() {
-    _addNavKey.currentState?.push(
-      MaterialPageRoute(
-        builder: (_) => HabitsScreen(onBack: _goHome),
-      ),
-    );
-  }
- 
-  void _goHome() {
-    _addNavKey.currentState?.popUntil((r) => r.isFirst);
-    setState(() => _selectedTab = HabuuTab.home);
-  }
- 
+
   void _onTabSelected(HabuuTab tab) {
     // Si toca la pestaña activa, vuelve a la raíz de esa pestaña
     if (tab == _selectedTab) {
