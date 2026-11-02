@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -13,6 +15,7 @@ class SimpleHabitData {
     this.iconData,
     this.iconAsset,
     this.iconColor,
+    this.progress = 0,
   }) : assert(
           iconData != null || iconAsset != null,
           'Provee iconData o iconAsset',
@@ -27,12 +30,15 @@ class SimpleHabitData {
   /// Ruta de un SVG (viene de HomeAssets).
   final String? iconAsset;
 
-  /// Color del contenedor circular cuando se usa [iconData].
+  /// Color del anillo y del ícono cuando se usa [iconData].
   final Color? iconColor;
+
+  /// Avance del hábito de 0 a 1 (arco del anillo).
+  final double progress;
 }
 
 /// Tarjeta de hábito para la pantalla "Tus Hábitos":
-/// ícono · título · subtítulo · botón de edición.
+/// ícono con anillo de progreso · título · subtítulo · botón de edición.
 class SimpleHabitCard extends StatelessWidget {
   const SimpleHabitCard({super.key, required this.data, this.onEdit});
 
@@ -45,7 +51,7 @@ class SimpleHabitCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: HabuuColors.white100,
-        borderRadius: BorderRadius.circular(HabuuRadius.sm),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: const [habuuCardShadow],
       ),
       child: Row(
@@ -78,7 +84,7 @@ class SimpleHabitCard extends StatelessWidget {
               child: const Icon(
                 Icons.edit_outlined,
                 size: 18,
-                color: HabuuColors.black40,
+                color: HabuuIconColors.black,
               ),
             ),
           ),
@@ -100,15 +106,68 @@ class _HabitIcon extends StatelessWidget {
     }
 
     final color = data.iconColor ?? HabuuColors.primary500;
-    return Container(
+    return SizedBox(
       width: 36,
       height: 36,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withValues(alpha: 0.15),
-        border: Border.all(color: color, width: 1.5),
+      child: CustomPaint(
+        painter: _RingPainter(
+          progress: data.progress,
+          color: color,
+          track: HabuuColors.grey150,
+        ),
+        child: Center(
+          child: Icon(data.iconData, size: 18, color: color),
+        ),
       ),
-      child: Icon(data.iconData, size: 18, color: HabuuColors.black80),
     );
   }
+}
+
+/// Anillo de progreso: pista gris completa y arco de color encima.
+class _RingPainter extends CustomPainter {
+  _RingPainter({
+    required this.progress,
+    required this.color,
+    required this.track,
+  });
+
+  final double progress;
+  final Color color;
+  final Color track;
+
+  static const double _stroke = 2;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = (Offset.zero & size).deflate(_stroke / 2);
+
+    // Pista
+    canvas.drawArc(
+      rect,
+      0,
+      math.pi * 2,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _stroke
+        ..color = track,
+    );
+
+    // Arco de avance (empieza arriba)
+    canvas.drawArc(
+      rect,
+      -math.pi / 2,
+      math.pi * 2 * progress.clamp(0.0, 1.0),
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _stroke
+        ..strokeCap = StrokeCap.round
+        ..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.progress != progress || old.color != color || old.track != track;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
  
+import '../../../config/assets.dart';
 import '../../../config/theme/tokens.dart';
 import '../../../data/models/habit.dart';
 import '../../providers/habits_provider.dart';
@@ -85,7 +86,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
  
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: HabuuGradients.pond),
+        decoration: const BoxDecoration(gradient: HabuuGradients.mintToSky),
         child: SafeArea(
           bottom: false,
           child: Padding(
@@ -334,7 +335,7 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         children: [
           Image.asset(
-            'assets/images/frog_mushroom.png',
+            HomeAssets.frogSmall,
             width: 77,
             height: 74,
             fit: BoxFit.contain,

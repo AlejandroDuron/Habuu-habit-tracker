@@ -54,7 +54,7 @@ class _Chip extends StatelessWidget {
         decoration: BoxDecoration(
           // Activo: verde oscuro relleno. Inactivo: fondo transparente, sin borde.
           color: selected ? HabuuColors.primary500 : Colors.transparent,
-          borderRadius: BorderRadius.circular(HabuuRadius.lg),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,

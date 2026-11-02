@@ -2,8 +2,22 @@ import '../models/habit.dart';
 import 'habit_data_source.dart';
  
 class InMemoryHabitDataSource implements HabitDataSource {
-  // Lista privada donde viven los hábitos mientras la app está abierta
-  final List<Habit> _habits = [];
+  // Hábito de prueba para visualizar las tarjetas en HabitsListScreen.
+  // Quitar cuando se conecte el backend real.
+  final List<Habit> _habits = [
+    Habit(
+      id: 'preview-1',
+      name: 'Tomar Agua',
+      type: HabitType.frecuente,
+      category: HabitCategory.salud,
+      iconIndex: 0,
+      colorValue: 0xFF13533A,
+      repeat: HabitRepeat.diariamente,
+      goalPerDay: 8,
+      reminderTime: HabitReminderTime.manana,
+      createdAt: DateTime(2026, 1, 1),
+    ),
+  ];
  
   @override
   Future<List<Habit>> getHabits() async {

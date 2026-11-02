@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
  
+import '../../../config/assets.dart';
 import '../../../config/theme/tokens.dart';
 import '../../../data/models/habit.dart';
 import '../../providers/habits_provider.dart';
@@ -239,7 +240,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                   const SizedBox(height: 33),
                   Center(
                     child: Image.asset(
-                      'assets/images/frog_mushroom.png',
+                      HomeAssets.frogSmall,
                       width: 77,
                       height: 74,
                       fit: BoxFit.contain,

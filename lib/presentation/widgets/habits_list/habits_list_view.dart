@@ -6,26 +6,43 @@ import '../habits/habit_icon_picker.dart';
 import '../shared/habit_card.dart';
 
 /// Lista scrolleable de hábitos con etiqueta "Omitidos" al final.
+/// Debe vivir dentro de un widget con altura acotada (Expanded, SizedBox, etc.)
 class HabitsListView extends StatelessWidget {
   const HabitsListView({
     super.key,
     required this.habits,
     required this.onEdit,
+    this.isLoading = false,
   });
 
   final List<Habit> habits;
-
-  /// Se llama con el hábito seleccionado al tocar el lápiz.
   final ValueChanged<Habit> onEdit;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: HabuuColors.primary500),
+      );
+    }
+
+    if (habits.isEmpty) {
+      return Center(
+        child: Text(
+          'Aún no tienes hábitos',
+          style: HabuuText.bodySmMedium.copyWith(color: HabuuColors.black60),
+        ),
+      );
+    }
+
+    // CustomScrollView une la lista y el footer "Omitidos" en un solo scroll,
+    // sin necesidad de anidar Column + Expanded adentro de otro Expanded.
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+          sliver: SliverList.separated(
             itemCount: habits.length,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, i) {
@@ -43,12 +60,14 @@ class HabitsListView extends StatelessWidget {
             },
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 4, 24, 12),
-          child: Text(
-            'Omitidos',
-            style: HabuuText.captionMdMedium.copyWith(
-              color: HabuuColors.black60,
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+            child: Text(
+              'Omitidos',
+              style: HabuuText.captionMdMedium.copyWith(
+                color: HabuuColors.black60,
+              ),
             ),
           ),
         ),

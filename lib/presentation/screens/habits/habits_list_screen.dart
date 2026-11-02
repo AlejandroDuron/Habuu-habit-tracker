@@ -10,6 +10,7 @@ import '../../widgets/habits_list/habits_list_view.dart';
 import '../../widgets/habits_list/period_segment.dart';
 import '../../widgets/shared/add_habit_fab.dart';
 import 'habit_form_screen.dart';
+import 'habits_screen.dart';
 
 const _periods = ['Hoy', 'Semana', 'Todo'];
 const _categories = ['Todo', 'Salud', 'Hogar', 'Universidad'];
@@ -34,9 +35,25 @@ class _HabitsListScreenState extends State<HabitsListScreen> {
     );
   }
 
+  void _openNew() {
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (_) => const HabitFormScreen(),
+      ),
+    );
+  }
+
+  void _openAllHabits() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => HabitsScreen(onBack: () => Navigator.of(context).pop()),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final habits = context.watch<HabitsProvider>().habits;
+    final provider = context.watch<HabitsProvider>();
 
     return Scaffold(
       body: DecoratedBox(
@@ -48,7 +65,7 @@ class _HabitsListScreenState extends State<HabitsListScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                child: const HabitsListHeader(),
+                child: HabitsListHeader(onMore: _openAllHabits),
               ),
               const SizedBox(height: 20),
               Padding(
@@ -68,15 +85,16 @@ class _HabitsListScreenState extends State<HabitsListScreen> {
               const SizedBox(height: 20),
               Expanded(
                 child: HabitsListView(
-                  habits: habits,
+                  habits: provider.habits,
                   onEdit: _openEdit,
+                  isLoading: provider.isLoading,
                 ),
               ),
             ],
           ),
         ),
       ),
-      floatingActionButton: AddHabitFab(onPressed: () {}),
+      floatingActionButton: AddHabitFab(onPressed: _openNew),
     );
   }
 }

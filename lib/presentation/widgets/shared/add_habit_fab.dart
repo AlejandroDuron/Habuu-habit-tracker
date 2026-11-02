@@ -10,16 +10,20 @@ class AddHabitFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton(
-      onPressed: onPressed,
-      backgroundColor: HabuuColors.primary50,
-      elevation: 2,
-      shape: const CircleBorder(),
-      tooltip: 'Añadir hábito',
-      child: const Icon(
-        Icons.add,
-        color: HabuuColors.primary500,
-        size: 28,
+    return SizedBox(
+      width: 64,
+      height: 64,
+      child: FloatingActionButton(
+        onPressed: onPressed,
+        backgroundColor: HabuuColors.primary50,
+        elevation: 2,
+        shape: const CircleBorder(),
+        tooltip: 'Añadir hábito',
+        child: const Icon(
+          Icons.add,
+          color: HabuuColors.primary500,
+          size: 32,
+        ),
       ),
     );
   }
