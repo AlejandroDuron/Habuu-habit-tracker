@@ -210,6 +210,14 @@ abstract final class HabuuGradients {
     colors: [HabuuColors.primary50, HabuuColors.success200],
     stops: [0.21635, 1.0],
   );
+
+  /// Rosita a lila, con el mismo corte que [pond]. Fondo de confirmar cierre de sesión
+  static const blush = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [HabuuColors.error50, HabuuColors.purple200],
+    stops: [0.21635, 1.0],
+  );
 }
 
 abstract final class HabuuRadius {
@@ -296,3 +304,35 @@ const habuuCardShadow = BoxShadow(
   offset: Offset(58, 26),
   blurRadius: 34,
 );
+
+/// Elevación baja, separa los grupos del menú de perfil
+const habuuElevation100 = [
+  BoxShadow(
+    color: Color(0x1F131927),
+    offset: Offset(0, 2),
+    blurRadius: 4,
+    spreadRadius: -2,
+  ),
+  BoxShadow(
+    color: Color(0x14131927),
+    offset: Offset(0, 4),
+    blurRadius: 4,
+    spreadRadius: -2,
+  ),
+];
+
+/// Elevación alta, para tarjetas que flotan sobre el fondo
+const habuuElevation500 = [
+  BoxShadow(
+    color: Color(0x1F131927),
+    offset: Offset(0, 6),
+    blurRadius: 14,
+    spreadRadius: -6,
+  ),
+  BoxShadow(
+    color: Color(0x1A131927),
+    offset: Offset(0, 10),
+    blurRadius: 32,
+    spreadRadius: -4,
+  ),
+];

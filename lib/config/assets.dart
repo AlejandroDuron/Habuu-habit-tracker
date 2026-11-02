@@ -47,3 +47,23 @@ abstract final class HabitIconAssets {
   /// Devuelve el ícono de esa clave, o el de por defecto si no existe.
   static String forKey(String? key) => byKey[key] ?? byKey[defaultKey]!;
 }
+
+abstract final class ProfileAssets {
+  static const avatar = 'assets/images/profile/avatar.jpg';
+  static const frogHeadphones = 'assets/images/profile/frog_headphones.png';
+  static const frogCrying = 'assets/images/profile/frog_crying.png';
+
+  static const user = 'assets/icons/profile/user.svg';
+  static const tools = 'assets/icons/profile/tools.svg';
+  static const shield = 'assets/icons/profile/shield.svg';
+  static const help = 'assets/icons/profile/headset_help.svg';
+  static const logOut = 'assets/icons/profile/log_out.svg';
+  static const arrowRight = 'assets/icons/profile/arrow_right.svg';
+  static const arrowRightError = 'assets/icons/profile/arrow_right_error.svg';
+
+  static const back = 'assets/icons/profile/nav_arrow_left.svg';
+  static const mail = 'assets/icons/profile/mail.svg';
+  static const phone = 'assets/icons/profile/phone.svg';
+  static const calendar = 'assets/icons/profile/calendar.svg';
+  static const arrowDown = 'assets/icons/profile/nav_arrow_down.svg';
+}

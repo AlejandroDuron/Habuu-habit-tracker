@@ -69,9 +69,11 @@ flutter:
     - assets/icons/home/
     - assets/icons/navbar/
     - assets/icons/pet_frog/
+    - assets/icons/profile/
     - assets/images/
     - assets/images/auth/
     - assets/images/calendar/
     - assets/images/home/
     - assets/images/landing/
     - assets/images/onboarding/
+    - assets/images/profile/
