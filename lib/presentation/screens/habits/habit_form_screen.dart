@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
- 
+
 import '../../../config/assets.dart';
 import '../../../config/theme/tokens.dart';
 import '../../../data/models/habit.dart';
@@ -16,7 +16,7 @@ import '../../widgets/habits/habit_switch_row.dart';
 import '../../widgets/habits/habit_time_picker.dart';
 import '../../widgets/habits/habit_type_toggle.dart';
 import 'habit_success_screen.dart';
- 
+
 class HabitFormScreen extends StatefulWidget {
   const HabitFormScreen({
     super.key,
@@ -28,18 +28,18 @@ class HabitFormScreen extends StatefulWidget {
   final Habit? habit;
   final VoidCallback? onBack;
   final VoidCallback? onSaved;
- 
+
   @override
   State<HabitFormScreen> createState() => _HabitFormScreenState();
 }
- 
+
 class _HabitFormScreenState extends State<HabitFormScreen> {
   final _formKey = GlobalKey<FormState>();
- 
+
   late final TextEditingController _nameController;
   late final TextEditingController _goalController;
   final _goalFocus = FocusNode();
- 
+
   // Estado local del formulario
   late HabitType _type;
   late HabitCategory _category;
@@ -52,13 +52,30 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   late bool _allowSkip;
   late bool _remindersEnabled;
 
+  /// Label de la categoría seleccionada (predefinida o personalizada).
+  /// Se usa para comparar con los chips que ahora trabajan con strings.
+  String _categoryLabel = '';
+
   /// Categorías personalizadas creadas por el usuario en esta sesión.
   final List<String> _customCategories = [];
- 
+
   bool _isSaving = false;
- 
+
   bool get _isEditing => widget.habit != null;
- 
+
+  // ── Expresiones regulares (con soporte Unicode: tildes, ñ, etc.) ──────────
+
+  /// Letras, números, espacios y signos básicos de puntuación.
+  static final RegExp _nameAllowedChars =
+      RegExp(r"^[\p{L}\p{N} .,'’\-()!?¡¿&]+$", unicode: true);
+
+  /// Letras, números y espacios (para categorías).
+  static final RegExp _categoryAllowedChars =
+      RegExp(r'^[\p{L}\p{N} ]+$', unicode: true);
+
+  static final RegExp _hasLetter = RegExp(r'\p{L}', unicode: true);
+  static final RegExp _onlyDigits = RegExp(r'^\d+$');
+
   @override
   void initState() {
     super.initState();
@@ -80,11 +97,12 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     _allDay = habit?.allDay ?? true;
     // Convierte el record del modelo a TimeOfDay.
     final rt = habit?.reminderTime;
-    _reminderTime = rt != null ? TimeOfDay(hour: rt.hour, minute: rt.minute) : null;
+    _reminderTime =
+        rt != null ? TimeOfDay(hour: rt.hour, minute: rt.minute) : null;
     _allowSkip = habit?.allowSkip ?? false;
     _remindersEnabled = habit?.remindersEnabled ?? true;
   }
- 
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -94,23 +112,37 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   }
 
   // ── Validaciones ──────────────────────────────────────────────────────────
- 
+
+  /// Quita espacios al inicio/fin y colapsa espacios repetidos.
+  String _normalize(String? value) =>
+      (value ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
+
   String? _validateName(String? value) {
-    final name = (value ?? '').trim();
+    final name = _normalize(value);
     if (name.isEmpty) return 'Escribe el nombre del hábito';
     if (name.length < 3) return 'Escribe al menos 3 caracteres';
     if (name.length > 40) return 'Máximo 40 caracteres';
+    if (!_hasLetter.hasMatch(name)) {
+      return 'El nombre debe incluir al menos una letra';
+    }
+    if (!_nameAllowedChars.hasMatch(name)) {
+      return 'Usa solo letras, números y signos básicos';
+    }
     return null;
   }
- 
+
   String? _validateGoal(String? value) {
-    final goal = int.tryParse((value ?? '').trim());
-    if (goal == null) return 'Escribe un número';
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return 'Escribe la meta diaria';
+    if (!_onlyDigits.hasMatch(text)) return 'Solo se permiten números enteros';
+    final goal = int.tryParse(text);
+    if (goal == null) return 'Escribe un número válido';
     if (goal < 1) return 'La meta tiene que ser al menos 1';
     if (goal > 99) return 'La meta máxima es 99 veces al día';
     return null;
   }
- 
+
+  /// Días de la semana (solo aplica a hábitos frecuentes semanales).
   String? _validateDays(Set<int>? days) {
     final needsDays =
         _type == HabitType.frecuente && _repeat == HabitRepeat.semanalmente;
@@ -120,6 +152,35 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     return null;
   }
 
+  /// Día del mes (solo aplica a hábitos frecuentes mensuales).
+  String? _validateMonthDay() {
+    final needsDay =
+        _type == HabitType.frecuente && _repeat == HabitRepeat.mensualmente;
+    if (!needsDay) return null;
+    if (_days.isEmpty) return 'Selecciona un día del mes';
+    final day = _days.first;
+    if (day < 1 || day > 31) return 'El día del mes debe ser entre 1 y 31';
+    return null;
+  }
+
+  /// La hora es obligatoria cuando los recordatorios están activados.
+  String? _validateReminderTime() {
+    if (!_remindersEnabled) return null;
+    final time = _reminderTime;
+    if (time == null) return 'Elige la hora del recordatorio';
+    if (time.hour < 0 || time.hour > 23 || time.minute < 0 || time.minute > 59) {
+      return 'La hora no es válida';
+    }
+    return null;
+  }
+
+  String? _validateCategory() {
+    if (_categoryLabel.trim().isEmpty) return 'Elige una categoría';
+    return null;
+  }
+
+  /// Red de seguridad final antes de guardar (por si algún campo
+  /// personalizado quedó fuera del Form).
   String? _validateSchedule() {
     if (_type == HabitType.fugaz) return null;
 
@@ -127,68 +188,38 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       case HabitRepeat.diariamente:
         return null;
       case HabitRepeat.semanalmente:
-        if (_days.isEmpty) return 'Elige al menos un día de la semana';
-        return null;
+        return _validateDays(_days);
       case HabitRepeat.mensualmente:
-        if (_days.isEmpty) return 'Elige el día del mes';
-        final day = _days.first;
-        if (day < 1 || day > 31) return 'El día del mes debe ser entre 1 y 31';
-        return null;
+        return _validateMonthDay();
     }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   // ── Categoría personalizada ────────────────────────────────────────────────
 
+  bool _categoryExists(String name) {
+    final lower = name.toLowerCase();
+    return HabitCategory.values.any((c) => c.label.toLowerCase() == lower) ||
+        _customCategories.any((c) => c.toLowerCase() == lower);
+  }
+
   Future<void> _showAddCategoryDialog() async {
-    final controller = TextEditingController();
     final name = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Nueva categoría'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-          maxLength: 20,
-          decoration: InputDecoration(
-            hintText: 'Ej. Ejercicio',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(HabuuRadius.sm),
-              borderSide: const BorderSide(color: HabuuColors.primary500, width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(HabuuRadius.sm),
-              borderSide: const BorderSide(color: HabuuColors.primary500, width: 1.5),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: HabuuColors.primary500),
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Agregar'),
-          ),
-        ],
+      builder: (_) => _CategoryDialog(
+        normalize: _normalize,
+        allowedChars: _categoryAllowedChars,
+        hasLetter: _hasLetter,
+        isDuplicate: _categoryExists,
       ),
     );
 
-    controller.dispose();
     if (name == null || name.isEmpty || !mounted) return;
-
-    // Evita duplicados (predefinidos o personalizados).
-    final exists = HabitCategory.values.any((c) => c.label.toLowerCase() == name.toLowerCase()) ||
-        _customCategories.any((c) => c.toLowerCase() == name.toLowerCase());
-    if (exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Esa categoría ya existe')),
-      );
-      return;
-    }
 
     setState(() {
       _customCategories.add(name);
@@ -197,12 +228,8 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     });
   }
 
-  /// Label de la categoría seleccionada (predefinida o personalizada).
-  /// Se usa para comparar con los chips que ahora trabajan con strings.
-  String _categoryLabel = '';
-
   // ── Guardar ───────────────────────────────────────────────────────────────
- 
+
   Habit _buildHabit() {
     final isFrequent = _type == HabitType.frecuente;
 
@@ -216,7 +243,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
 
     return Habit(
       id: widget.habit?.id ?? '',
-      name: _nameController.text.trim(),
+      name: _normalize(_nameController.text),
       type: _type,
       category: category,
       iconIndex: _iconIndex,
@@ -233,15 +260,20 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       createdAt: widget.habit?.createdAt ?? DateTime.now(),
     );
   }
- 
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
 
-    final scheduleError = _validateSchedule();
-    if (scheduleError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(scheduleError)),
-      );
+  Future<void> _save() async {
+    if (_isSaving) return;
+
+    // 1) Campos del Form (nombre, meta, días, día del mes, hora).
+    if (!_formKey.currentState!.validate()) {
+      _showSnack('Revisa los campos marcados en rojo');
+      return;
+    }
+
+    // 2) Validaciones que no viven en un FormField.
+    final extraError = _validateCategory() ?? _validateSchedule();
+    if (extraError != null) {
+      _showSnack(extraError);
       return;
     }
 
@@ -252,16 +284,12 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     final ok = _isEditing
         ? await provider.updateHabit(habit)
         : await provider.addHabit(habit);
- 
+
     if (!mounted) return;
     setState(() => _isSaving = false);
- 
+
     if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.errorMessage ?? 'Algo salió mal'),
-        ),
-      );
+      _showSnack(provider.errorMessage ?? 'Algo salió mal');
       return;
     }
 
@@ -279,7 +307,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       ),
     );
   }
- 
+
   void _goBack() {
     if (widget.onBack != null) {
       widget.onBack!();
@@ -289,11 +317,11 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   }
 
   // ── Interfaz ──────────────────────────────────────────────────────────────
- 
+
   @override
   Widget build(BuildContext context) {
     final isFrequent = _type == HabitType.frecuente;
- 
+
     return Scaffold(
       body: DecoratedBox(
         decoration: const BoxDecoration(gradient: HabuuGradients.pond),
@@ -328,7 +356,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                       onChanged: (type) => setState(() => _type = type),
                     ),
                   ],
- 
+
                   const SizedBox(height: 33),
                   _Section(
                     label: _isEditing
@@ -338,8 +366,12 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                     child: TextFormField(
                       controller: _nameController,
                       validator: _validateName,
+                      keyboardType: TextInputType.text,
                       textCapitalization: TextCapitalization.sentences,
                       textInputAction: TextInputAction.next,
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(40),
+                      ],
                       onFieldSubmitted: (_) => _goalFocus.requestFocus(),
                       style: HabuuText.bodyLgRegular.copyWith(
                         color: HabuuTextColors.primaryBlack,
@@ -347,7 +379,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                       decoration: _inputDecoration(hint: 'Ej. Tomar agua'),
                     ),
                   ),
- 
+
                   const SizedBox(height: 33),
                   _Section(
                     label: 'Categoría',
@@ -358,8 +390,8 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                       onChanged: (label) => setState(() {
                         _categoryLabel = label;
                         // Si es predefinida, actualiza _category también.
-                        final predefined = HabitCategory.values
-                            .where((c) => c.label == label);
+                        final predefined =
+                            HabitCategory.values.where((c) => c.label == label);
                         if (predefined.isNotEmpty) {
                           _category = predefined.first;
                         }
@@ -367,7 +399,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                       onAddNew: _showAddCategoryDialog,
                     ),
                   ),
- 
+
                   const SizedBox(height: 33),
                   _Section(
                     label: 'Iconos',
@@ -377,7 +409,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                       onChanged: (i) => setState(() => _iconIndex = i),
                     ),
                   ),
- 
+
                   const SizedBox(height: 33),
                   _Section(
                     label: 'Color',
@@ -387,7 +419,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                       onChanged: (c) => setState(() => _colorValue = c),
                     ),
                   ),
- 
+
                   // "Repetir" y selector de días solo existen para hábitos frecuentes.
                   if (isFrequent) ...[
                     const SizedBox(height: 33),
@@ -412,6 +444,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                       const SizedBox(height: 33),
                       if (_repeat == HabitRepeat.semanalmente)
                         FormField<Set<int>>(
+                          key: const ValueKey('weekly-days-field'),
                           initialValue: _days,
                           validator: _validateDays,
                           builder: (field) => Column(
@@ -428,63 +461,69 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                                     setState(() => _allDay = v),
                               ),
                               if (field.hasError)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Text(
-                                    field.errorText!,
-                                    style: HabuuText.captionMdMedium.copyWith(
-                                      color: HabuuTextColors.error,
-                                    ),
-                                  ),
-                                ),
+                                _ErrorText(field.errorText!),
                             ],
                           ),
                         )
                       else if (_repeat == HabitRepeat.mensualmente)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Elige el día del mes',
-                              style: HabuuText.subtitleSmMedium.copyWith(
-                                color: HabuuTextColors.primaryBlack,
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            HabitMonthDayPicker(
-                              selectedDay: _days.isNotEmpty ? _days.first : null,
-                              onChanged: (day) {
-                                setState(() {
-                                  _days = day != null ? {day} : {};
-                                });
-                              },
-                            ),
-                            if (_days.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  'Selecciona un día del calendario',
-                                  style: HabuuText.captionMdMedium.copyWith(
-                                    color: HabuuTextColors.error,
-                                  ),
+                        FormField<int>(
+                          key: const ValueKey('monthly-day-field'),
+                          initialValue: _days.isNotEmpty ? _days.first : null,
+                          validator: (_) => _validateMonthDay(),
+                          builder: (field) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Elige el día del mes',
+                                style: HabuuText.subtitleSmMedium.copyWith(
+                                  color: HabuuTextColors.primaryBlack,
                                 ),
                               ),
-                          ],
+                              const SizedBox(height: 18),
+                              HabitMonthDayPicker(
+                                selectedDay:
+                                    _days.isNotEmpty ? _days.first : null,
+                                onChanged: (day) {
+                                  setState(() {
+                                    _days = day != null ? {day} : {};
+                                  });
+                                  field.didChange(day);
+                                },
+                              ),
+                              if (field.hasError)
+                                _ErrorText(field.errorText!),
+                            ],
+                          ),
                         ),
                     ],
                   ],
- 
+
                   const SizedBox(height: 33),
                   _Section(
                     label: 'Recordar',
                     gap: 18,
-                    child: HabitTimePicker(
-                      selectedTime: _reminderTime,
-                      onChanged: (time) =>
-                          setState(() => _reminderTime = time),
+                    // La key cambia con el switch para limpiar el error
+                    // cuando se desactivan los recordatorios.
+                    child: FormField<TimeOfDay>(
+                      key: ValueKey('reminder-time-$_remindersEnabled'),
+                      initialValue: _reminderTime,
+                      validator: (_) => _validateReminderTime(),
+                      builder: (field) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          HabitTimePicker(
+                            selectedTime: _reminderTime,
+                            onChanged: (time) {
+                              setState(() => _reminderTime = time);
+                              field.didChange(time);
+                            },
+                          ),
+                          if (field.hasError) _ErrorText(field.errorText!),
+                        ],
+                      ),
                     ),
                   ),
- 
+
                   const SizedBox(height: 33),
                   _Section(
                     label: 'Meta',
@@ -512,7 +551,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                       ),
                     ),
                   ),
- 
+
                   const SizedBox(height: 33),
                   HabitSwitchRow(
                     label: 'Permitir omitir hábito',
@@ -525,7 +564,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                     value: _remindersEnabled,
                     onChanged: (v) => setState(() => _remindersEnabled = v),
                   ),
- 
+
                   const SizedBox(height: 47),
                   Center(
                     child: _SaveButton(
@@ -554,7 +593,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
           borderRadius: BorderRadius.circular(HabuuRadius.sm),
           borderSide: BorderSide(color: color, width: 1.5),
         );
- 
+
     return InputDecoration(
       filled: true,
       fillColor: HabuuColors.success0,
@@ -578,13 +617,109 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     );
   }
 }
- 
+
+/// Diálogo para crear una categoría personalizada.
+/// Es un StatefulWidget propio para que el controller y el Form se creen y
+/// se liberen junto con el diálogo (evita usar un controller ya disposed
+/// durante la animación de cierre).
+class _CategoryDialog extends StatefulWidget {
+  const _CategoryDialog({
+    required this.normalize,
+    required this.allowedChars,
+    required this.hasLetter,
+    required this.isDuplicate,
+  });
+
+  final String Function(String?) normalize;
+  final RegExp allowedChars;
+  final RegExp hasLetter;
+  final bool Function(String name) isDuplicate;
+
+  @override
+  State<_CategoryDialog> createState() => _CategoryDialogState();
+}
+
+class _CategoryDialogState extends State<_CategoryDialog> {
+  final _controller = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  String? _validate(String? value) {
+    final name = widget.normalize(value);
+    if (name.isEmpty) return 'Escribe el nombre de la categoría';
+    if (name.length < 2) return 'Escribe al menos 2 caracteres';
+    if (name.length > 20) return 'Máximo 20 caracteres';
+    if (!widget.hasLetter.hasMatch(name)) {
+      return 'Debe incluir al menos una letra';
+    }
+    if (!widget.allowedChars.hasMatch(name)) {
+      return 'Usa solo letras, números y espacios';
+    }
+    if (widget.isDuplicate(name)) return 'Esa categoría ya existe';
+    return null;
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    Navigator.pop(context, widget.normalize(_controller.text));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    OutlineInputBorder border(Color color) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(HabuuRadius.sm),
+          borderSide: BorderSide(color: color, width: 1.5),
+        );
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('Nueva categoría'),
+      content: Form(
+        key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: TextFormField(
+          controller: _controller,
+          validator: _validate,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          textInputAction: TextInputAction.done,
+          maxLength: 20,
+          onFieldSubmitted: (_) => _submit(),
+          decoration: InputDecoration(
+            hintText: 'Ej. Ejercicio',
+            enabledBorder: border(HabuuColors.primary500),
+            focusedBorder: border(HabuuColors.primary500),
+            errorBorder: border(HabuuColors.error500),
+            focusedErrorBorder: border(HabuuColors.error500),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(foregroundColor: HabuuColors.primary500),
+          onPressed: _submit,
+          child: const Text('Agregar'),
+        ),
+      ],
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   const _Header({required this.title, required this.onBack});
- 
+
   final String title;
   final VoidCallback onBack;
- 
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -612,18 +747,18 @@ class _Header extends StatelessWidget {
     );
   }
 }
- 
+
 class _Section extends StatelessWidget {
   const _Section({
     required this.label,
     required this.gap,
     required this.child,
   });
- 
+
   final String label;
   final double gap;
   final Widget child;
- 
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -641,7 +776,28 @@ class _Section extends StatelessWidget {
     );
   }
 }
- 
+
+/// Texto de error para campos personalizados (FormField) que no muestran
+/// el error por sí solos como lo hace TextFormField.
+class _ErrorText extends StatelessWidget {
+  const _ErrorText(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        text,
+        style: HabuuText.captionMdMedium.copyWith(
+          color: HabuuTextColors.error,
+        ),
+      ),
+    );
+  }
+}
+
 class _SaveButton extends StatelessWidget {
   const _SaveButton({
     required this.label,
@@ -649,12 +805,12 @@ class _SaveButton extends StatelessWidget {
     required this.isLoading,
     required this.onPressed,
   });
- 
+
   final String label;
   final double width;
   final bool isLoading;
   final VoidCallback onPressed;
- 
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
