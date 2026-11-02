@@ -83,7 +83,8 @@ class HabitsListScreen extends StatelessWidget {
 
   Future<void> _moveHabit(BuildContext context, Habit habit) async {
     final provider = context.read<HabitsProvider>();
-    final habits = provider.habits;
+    final habits =
+        provider.habits.where((h) => h.type == habit.type).toList();
     final currentIndex = habits.indexWhere((h) => h.id == habit.id);
     if (currentIndex == -1) return;
 

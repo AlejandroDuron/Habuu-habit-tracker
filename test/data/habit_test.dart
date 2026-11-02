@@ -1,5 +1,4 @@
-// Pruebas unitarias del modelo Habit. Aquí no hay pantallas porque solo revisamos que la clase se porte
-// como esperamos con datos normales y con casos raros
+// pruebas unitarias del modelo Habit como se espera con datos reales
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:habuu/data/models/habit.dart';
@@ -19,8 +18,22 @@ void main() {
     });
   });
 
+  group('categoryLabel', () {
+    test('si no se pasa, usa el nombre de la categoría del enum', () {
+      expect(buildHabit(category: HabitCategory.hogar).categoryLabel, 'Hogar');
+    });
+
+    test('guarda el nombre de una categoría personalizada', () {
+      final habit = buildHabit().copyWith(categoryLabel: 'Gimnasio');
+
+      expect(habit.categoryLabel, 'Gimnasio');
+      // Y no se pierde al pasar por toMap / fromMap.
+      expect(Habit.fromMap(habit.toMap()).categoryLabel, 'Gimnasio');
+    });
+  });
+
   group('Asserts del constructor', () {
-    // Los assert solo corren en modo debug, que es como corren las pruebas
+    // Los assert solo corren en modo debug, que es como corren las pruebas.
     test('no deja crear un hábito con nombre vacío', () {
       expect(() => buildHabit(name: '   '), throwsA(isA<AssertionError>()));
     });

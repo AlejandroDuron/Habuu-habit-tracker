@@ -1,3 +1,4 @@
+// El provider es donde vive el estado de los hábitos, así que aquí
 // revisamos que cargue, cree, edite, borre y filtre bien, y que avise a la
 // pantalla con notifyListeners() cada vez que algo cambia
 
@@ -113,8 +114,7 @@ void main() {
       await provider.addHabit(buildHabit(name: 'Correr'));
       final habit = provider.habits.single;
 
-      // cambiamos solo la meta, proque el nombre choca consigo mismo y no
-      // debe contar como duplicado
+
       final ok = await provider.updateHabit(habit.copyWith(goalPerDay: 2));
 
       expect(ok, isTrue);
@@ -214,12 +214,35 @@ void main() {
       expect(provider.fleetingHabits.map((h) => h.name), ['Tarea']);
     });
 
-    test('el chip de categoría filtra la lista', () {
-      provider.setChipFilter(HabitChipFilter.home);
+    test('availableCategories da las categorías sin repetir y en orden', () {
+      expect(provider.availableCategories, ['Hogar', 'Salud', 'Universidad']);
+    });
+
+    test('el filtro de categoría usa el nombre de la categoría', () {
+      provider.setCategoryFilter('Hogar');
       expect(provider.filteredHabits.map((h) => h.name), ['Barrer']);
 
-      provider.setChipFilter(HabitChipFilter.university);
+      provider.setCategoryFilter('Universidad');
       expect(provider.filteredHabits.map((h) => h.name), ['Tarea']);
+    });
+
+    test('tipo y categoría se combinan', () {
+      provider.setChipFilter(HabitChipFilter.fleeting);
+      provider.setCategoryFilter('Salud');
+
+      // Ningún hábito fugaz es de salud
+      expect(provider.filteredHabits, isEmpty);
+    });
+
+    test('resetFilters vuelve a mostrar todo', () {
+      provider.setChipFilter(HabitChipFilter.frequent);
+      provider.setCategoryFilter('Hogar');
+
+      provider.resetFilters();
+
+      expect(provider.chipFilter, HabitChipFilter.all);
+      expect(provider.categoryFilter, isNull);
+      expect(provider.filteredHabits, hasLength(3));
     });
 
     test('el chip "omitidos" usa los logs del día', () {
@@ -228,10 +251,10 @@ void main() {
     });
 
     test('elegir el mismo filtro otra vez no vuelve a avisar', () {
-      provider.setChipFilter(HabitChipFilter.health);
+      provider.setCategoryFilter('Salud');
       final before = notifications;
 
-      provider.setChipFilter(HabitChipFilter.health);
+      provider.setCategoryFilter('Salud');
 
       expect(notifications, before);
     });
