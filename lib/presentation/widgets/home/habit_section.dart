@@ -11,6 +11,7 @@ class HabitSection extends StatelessWidget {
     required this.title,
     required this.items,
     this.onDone,
+    this.onShowMore,
     this.expandedHabitId,
     this.expandedBuilder,
     this.headerGap = 4,
@@ -22,6 +23,9 @@ class HabitSection extends StatelessWidget {
 
   /// Se llama con la tarjeta cuyo botón de completar se tocó.
   final ValueChanged<HabitCardData>? onDone;
+
+  /// Se llama al tocar "Mostrar" en el título.
+  final VoidCallback? onShowMore;
 
   /// Hábito que tiene su panel abierto, si hay alguno.
   final String? expandedHabitId;
@@ -40,7 +44,7 @@ class HabitSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(title: title),
+        SectionHeader(title: title, onShowMore: onShowMore),
         SizedBox(height: headerGap),
         for (var i = 0; i < items.length; i++) ...[
           if (i > 0) SizedBox(height: itemGap),

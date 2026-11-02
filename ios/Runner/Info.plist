@@ -68,5 +68,7 @@
 	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Habuu usa tus fotos para que guardes la evidencia de tus hábitos.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Habuu usa la cámara para que tomes la foto de evidencia de tus hábitos.</string>
 </dict>
 </plist>

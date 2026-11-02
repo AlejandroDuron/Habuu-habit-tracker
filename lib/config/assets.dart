@@ -22,6 +22,7 @@ abstract final class HomeAssets {
 
   static const add = 'assets/icons/home/add.svg';
   static const done = 'assets/icons/home/done.svg';
+  static const camera = 'assets/icons/home/camera.svg';
 }
 
 /// Íconos que se pueden elegir para un hábito.

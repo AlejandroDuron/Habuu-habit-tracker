@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../config/assets.dart';
 import '../../../config/theme/tokens.dart';
 import '../../../services/photo_picker.dart';
 
@@ -25,16 +27,21 @@ class _EvidencePanelState extends State<EvidencePanel> {
   Uint8List? _photo;
   bool _busy = false;
 
-  Future<void> _pickPhoto() async {
+  /// Pide la foto a la galería o a la cámara. [source] es solo para el
+  /// mensaje de error, por ejemplo "la galería".
+  Future<void> _getPhoto(
+    Future<Uint8List?> Function() pick,
+    String source,
+  ) async {
     try {
-      final photo = await pickEvidencePhoto();
+      final photo = await pick();
       if (photo != null && mounted) setState(() => _photo = photo);
     } on PlatformException catch (e) {
-      debugPrint('No se pudo abrir la galería: ${e.code}');
+      debugPrint('No se pudo abrir $source: ${e.code}');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo abrir la galería. Revisa los permisos.'),
+        SnackBar(
+          content: Text('No se pudo abrir $source. Revisa los permisos.'),
         ),
       );
     }
@@ -83,11 +90,29 @@ class _EvidencePanelState extends State<EvidencePanel> {
                         style: HabuuText.bodySmMedium,
                       ),
                       const SizedBox(height: 18),
-                      _FilledButton(
-                        label: photo == null
-                            ? 'Escoger Archivo'
-                            : 'Cambiar Archivo',
-                        onPressed: _busy ? null : _pickPhoto,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: _FilledButton(
+                              label: photo == null
+                                  ? 'Escoger Archivo'
+                                  : 'Cambiar Archivo',
+                              onPressed: _busy
+                                  ? null
+                                  : () => _getPhoto(
+                                      pickEvidencePhoto,
+                                      'la galería',
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _CameraButton(
+                            onPressed: _busy
+                                ? null
+                                : () =>
+                                      _getPhoto(takeEvidencePhoto, 'la cámara'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -185,7 +210,40 @@ class _FilledButton extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: _buttonText,
       ),
-      child: Text(label),
+      // En pantallas angostas el texto se achica en vez de cortarse.
+      child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1)),
+    );
+  }
+}
+
+/// Botón cuadrado con el ícono de cámara, del mismo alto que los demás.
+class _CameraButton extends StatelessWidget {
+  const _CameraButton({required this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  static const double _size = 30;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton.filled(
+      onPressed: onPressed,
+      tooltip: 'Tomar foto',
+      constraints: const BoxConstraints.tightFor(width: _size, height: _size),
+      padding: EdgeInsets.zero,
+      style: IconButton.styleFrom(
+        backgroundColor: HabuuColors.primary500,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      icon: SvgPicture.asset(
+        HomeAssets.camera,
+        width: 18,
+        height: 18,
+        colorFilter: const ColorFilter.mode(
+          HabuuColors.white100,
+          BlendMode.srcIn,
+        ),
+      ),
     );
   }
 }
