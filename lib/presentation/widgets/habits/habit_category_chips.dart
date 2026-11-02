@@ -6,13 +6,15 @@ import '../../../data/models/habit.dart';
 class HabitCategoryChips extends StatelessWidget {
   const HabitCategoryChips({
     super.key,
-    required this.selected,
+    required this.selectedLabel,
     required this.onChanged,
     this.customCategories = const [],
     this.onAddNew,
   });
- 
-  final HabitCategory selected;
+
+  /// Label de la categoría seleccionada, funciona tanto para predefinidas
+  /// como para las personalizadas creadas por el usuario.
+  final String selectedLabel;
 
   /// Categorías personalizadas creadas por el usuario (nombres).
   /// Se muestran después de las predefinidas y se seleccionan por su label.
@@ -72,7 +74,7 @@ class HabitCategoryChips extends StatelessWidget {
   }
 
   /// El label de la categoría seleccionada, comparando por label en string.
-  String get _selectedLabel => selected.label;
+  String get _selectedLabel => selectedLabel;
 }
  
 class _CategoryChip extends StatelessWidget {

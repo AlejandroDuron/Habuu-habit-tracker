@@ -89,7 +89,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     _goalController.text = '${habit?.goalPerDay ?? 1}';
     _type = habit?.type ?? HabitType.frecuente;
     _category = habit?.category ?? HabitCategory.values.first;
-    _categoryLabel = _category.label;
+    _categoryLabel = habit?.categoryLabel ?? _category.label;
     _iconIndex = habit?.iconIndex ?? 0;
     _colorValue = habit?.colorValue ?? habitColorOptions.first.toARGB32();
     _repeat = habit?.repeat ?? HabitRepeat.diariamente;
@@ -179,8 +179,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     return null;
   }
 
-  /// Red de seguridad final antes de guardar (por si algún campo
-  /// personalizado quedó fuera del Form).
+  /// Red de seguridad final antes de guardar.
   String? _validateSchedule() {
     if (_type == HabitType.fugaz) return null;
 
@@ -231,14 +230,13 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   // ── Guardar ───────────────────────────────────────────────────────────────
 
   Habit _buildHabit() {
-    final isFrequent = _type == HabitType.frecuente;
-
-    // Resuelve la categoría: si el label coincide con un enum predefinido,
-    // usa ese; si no, usa el primero por defecto (las personalizadas se
-    // guardan por nombre en la BD a través del datasource).
+    // Resuelve el enum de categoría: si el label coincide con uno predefinido,
+    // usa ese; si es personalizado, usa el primero como fallback estructural.
+    // El nombre real siempre se pasa en categoryLabel para que el datasource
+    // lo use al insertar en Supabase.
     final category = HabitCategory.values.firstWhere(
       (c) => c.label == _categoryLabel,
-      orElse: () => _category,
+      orElse: () => HabitCategory.values.first,
     );
 
     return Habit(
@@ -246,10 +244,11 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       name: _normalize(_nameController.text),
       type: _type,
       category: category,
+      categoryLabel: _categoryLabel,
       iconIndex: _iconIndex,
       colorValue: _colorValue,
-      repeat: isFrequent ? _repeat : null,
-      days: isFrequent ? _days : const {},
+      repeat: _type == HabitType.frecuente ? _repeat : null,
+      days: _type == HabitType.frecuente ? _days : const {},
       allDay: _allDay,
       reminderTime: _reminderTime != null
           ? (hour: _reminderTime!.hour, minute: _reminderTime!.minute)
@@ -385,7 +384,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                     label: 'Categoría',
                     gap: 16,
                     child: HabitCategoryChips(
-                      selected: _category,
+                      selectedLabel: _categoryLabel,
                       customCategories: _customCategories,
                       onChanged: (label) => setState(() {
                         _categoryLabel = label;
@@ -432,8 +431,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                         labelOf: (r) => r.label,
                         onChanged: (r) => setState(() {
                           _repeat = r;
-                          // Limpia los días al cambiar de tipo de repetición
-                          // para que no queden datos incoherentes.
                           _days = {};
                         }),
                       ),
