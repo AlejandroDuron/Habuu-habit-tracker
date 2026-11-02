@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '/config/app_providers.dart';
 import '/config/routes.dart';
 import '/presentation/screens/landing/landing_screen.dart';
+import '/services/notification_service.dart';
 import '/utils/dev_session.dart';
 
 final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
@@ -19,6 +20,14 @@ Future<void> main() async {
     publishableKey: const String.fromEnvironment('SUPABASE_KEY'),
   );
   await signInForDevelopment(Supabase.instance.client);
+  
+  final reminders = LocalNotificationService();
+  try {
+    await reminders.init();
+  } catch (e) {
+
+    debugPrint('No se pudieron iniciar las notificaciones: $e');
+  }
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -27,7 +36,11 @@ Future<void> main() async {
     ),
   );
 
-  runApp(const AppProviders(child: HabuuApp()));
+  runApp(AppProviders(reminders: reminders, child: const HabuuApp()));
+
+  reminders.requestPermission().catchError(
+    (e) => debugPrint('No se pudo pedir permiso de notificaciones: $e'),
+  );
 }
 
 class HabuuApp extends StatelessWidget {

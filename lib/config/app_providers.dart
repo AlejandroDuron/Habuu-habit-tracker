@@ -17,21 +17,16 @@ import '/presentation/providers/habits_provider.dart';
 import '/presentation/providers/home_provider.dart';
 import '/presentation/providers/streaks_provider.dart';
 import '/presentation/providers/trophies_provider.dart';
-
-/// Construye el árbol de providers de la app.
-///
-/// Separar esto de [main] mantiene el archivo de entrada limpio y
-/// facilita intercambiar datasources reales por fakes en tests.
-///
-/// Orden de registro:
-///  1. TrophiesProvider (sin dependencias)
-///  2. HabitsProvider   (depende de TrophiesProvider)
-///  3. StreaksProvider   (depende de TrophiesProvider)
-///  4. HomeProvider      (depende de TrophiesProvider + StreaksProvider)
+import '/services/notification_service.dart';
+  
 class AppProviders extends StatelessWidget {
-  const AppProviders({super.key, required this.child});
+  const AppProviders({super.key, required this.child, this.reminders});
 
   final Widget child;
+
+  /// Servicio de notificaciones que se crea en main(). Si no se pasa, la
+  /// app funciona igual pero sin recordatorios
+  final HabitReminderScheduler? reminders;
 
   @override
   Widget build(BuildContext context) {
@@ -42,20 +37,18 @@ class AppProviders extends StatelessWidget {
 
     return MultiProvider(
       providers: [
-        // ── TrophiesProvider (primero: los demás dependen de él) ──────────
+        //TrophiesProvider no depende de nadie, por eso es un ChangeNotifierProvider
         ChangeNotifierProvider(
           create: (_) => TrophiesProvider(
-            TrophyRepository(
-              trophyDs,
-              dailySummary: dailySummaryDs,
-            ),
+            TrophyRepository(trophyDs, dailySummary: dailySummaryDs),
           ),
         ),
 
-        // ── HabitsProvider ────────────────────────────────────────────────
+        //HabitsProvider depende de trofeos, por eso es un ChangeNotifierProxyProvider
         ChangeNotifierProxyProvider<TrophiesProvider, HabitsProvider>(
           create: (_) => HabitsProvider(
             HabitRepository(SupabaseHabitDataSource(supabase)),
+            reminders: reminders,
           )..loadHabits(),
           update: (_, trophies, habits) {
             habits!.setTrophiesProvider(trophies);
@@ -63,7 +56,7 @@ class AppProviders extends StatelessWidget {
           },
         ),
 
-        // ── StreaksProvider ───────────────────────────────────────────────
+        //StreaksProvider depende de trofeos, por eso es un ChangeNotifierProxyProvider
         ChangeNotifierProxyProvider<TrophiesProvider, StreaksProvider>(
           create: (_) => StreaksProvider(
             StreakRepository(SupabaseStreakDataSource(supabase)),
@@ -73,15 +66,12 @@ class AppProviders extends StatelessWidget {
             return streaks;
           },
         ),
-
-        // ── HomeProvider ──────────────────────────────────────────────────
-        // Depende de TrophiesProvider (day_completed, discipline, etc.)
-        // y de StreaksProvider (leer racha actual al evaluar streak_7/14).
-        // También se conecta con HabitsProvider para sincronización
-        // bidireccional: cambios en hábitos recargan el Home, y marcar
-        // hábitos en el Home actualiza los logs en HabitsList.
-        ChangeNotifierProxyProvider2<TrophiesProvider, StreaksProvider,
-            HomeProvider>(
+        //home provider depende de trofeos y rachas, por eso es un ChangeNotifierProxyProvider2
+        ChangeNotifierProxyProvider2<
+          TrophiesProvider,
+          StreaksProvider,
+          HomeProvider
+        >(
           create: (_) => HomeProvider(
             HomeRepository(
               SupabaseHomeDataSource(supabase),
@@ -90,7 +80,7 @@ class AppProviders extends StatelessWidget {
             ),
           ),
           update: (context, trophies, streaks, home) {
-            // Lee HabitsProvider del árbol para inyectarlo en HomeProvider.
+            // Lee HabitsProvider del árbol para inyectarlo en HomeProvider
             final habits = context.read<HabitsProvider>();
             home!
               ..setTrophiesProvider(trophies)
@@ -100,7 +90,7 @@ class AppProviders extends StatelessWidget {
           },
         ),
 
-        // ── AuthProvider ──────────────────────────────────────────────────
+        //Authprovider para manejar el estado de autenticación del usuario
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: child,

@@ -7,24 +7,16 @@ import '../models/habit.dart';
 import '../models/habit_log.dart';
 import 'habit_data_source.dart';
 
-/// Implementación real de [HabitDataSource] usando Supabase.
-///
-/// Mapeo de campos:
-/// - `iconIndex` (local, 0-based) ↔ `icon_key` (DB, texto)  usando las claves de [HabitIconAssets].
-/// - `category` (local, enum en español) ↔ `category_id` (DB, UUID).
-///   Las categorías del usuario se resuelven la primera vez y se cachean.
-/// - `colorValue` (local, ARGB int) ↔ `color` (DB, hex string "#RRGGBB").
-/// - `type` (frecuente/fugaz) ↔ `type` (recurring/one_time).
-/// - `repeat` (diariamente/semanalmente/mensualmente) ↔ `frequency` (weekly/monthly) + `days_of_week` / `day_of_month`.
+
 class SupabaseHabitDataSource implements HabitDataSource {
   SupabaseHabitDataSource(this._client);
 
   final SupabaseClient _client;
 
-  // Caché de categorías del usuario: nombre en español → category_id.
+  // Caché de categorías del usuario
   final Map<String, String> _categoryCache = {};
 
-  // ── Claves de iconos (misma lista que HabitIconAssets.byKey)  ─────────────
+
 
   static final _iconKeys = HabitIconAssets.byKey.keys.toList();
 
@@ -40,10 +32,10 @@ class SupabaseHabitDataSource implements HabitDataSource {
     return i < 0 ? 0 : i;
   }
 
-  // ── Mapeo de colores  ──────────────────────────────────────────────────────
+  //Colores
 
-  /// int ARGB (0xFFRRGGBB) → "#RRGGBB".
-  static String _colorToHex(int argb) {
+
+    static String _colorToHex(int argb) {
     final r = (argb >> 16) & 0xFF;
     final g = (argb >> 8) & 0xFF;
     final b = argb & 0xFF;
@@ -52,27 +44,29 @@ class SupabaseHabitDataSource implements HabitDataSource {
         '${b.toRadixString(16).padLeft(2, '0')}';
   }
 
-  /// "#RRGGBB" → int ARGB (0xFFRRGGBB).
+
   static int _hexToColor(String hex) {
     final clean = hex.replaceFirst('#', '');
     return int.parse('FF$clean', radix: 16);
   }
 
-  // ── Mapeo de tipo  ─────────────────────────────────────────────────────────
-
+  //Tipo de hábito
   static String _typeToDb(HabitType type) =>
       type == HabitType.frecuente ? 'recurring' : 'one_time';
 
   static HabitType _typeFromDb(String value) =>
       value == 'recurring' ? HabitType.frecuente : HabitType.fugaz;
 
-  // ── Mapeo de frecuencia  ───────────────────────────────────────────────────
+  //Frecuencia
 
-  /// Devuelve el fragmento de frecuencia para insertar en DB.
-  static Map<String, dynamic> _frequencyToDb(HabitRepeat? repeat, Set<int> days) {
+  /// Devuelve el fragmento de frecuencia para insertar en DB
+  static Map<String, dynamic> _frequencyToDb(
+    HabitRepeat? repeat,
+    Set<int> days,
+  ) {
     switch (repeat) {
       case HabitRepeat.diariamente:
-        // Diario = semanal con los 7 días.
+        
         return {
           'frequency': 'weekly',
           'days_of_week': [1, 2, 3, 4, 5, 6, 7],
@@ -91,12 +85,8 @@ class SupabaseHabitDataSource implements HabitDataSource {
           'day_of_month': days.isNotEmpty ? days.first : 1,
         };
       case null:
-        // Hábito fugaz (one_time): sin frecuencia.
-        return {
-          'frequency': null,
-          'days_of_week': null,
-          'day_of_month': null,
-        };
+      
+        return {'frequency': null, 'days_of_week': null, 'day_of_month': null};
     }
   }
 
@@ -109,8 +99,10 @@ class SupabaseHabitDataSource implements HabitDataSource {
 
     if (frequency == 'weekly') {
       final days = (daysOfWeek ?? []).map((d) => (d as num).toInt()).toSet();
-      // Si tiene los 7 días → diario.
-      if (days.length == 7) return (repeat: HabitRepeat.diariamente, days: days);
+      // Si tiene los 7 días es a diario
+      if (days.length == 7) {
+        return (repeat: HabitRepeat.diariamente, days: days);
+      }
       return (repeat: HabitRepeat.semanalmente, days: days);
     }
 
@@ -119,11 +111,57 @@ class SupabaseHabitDataSource implements HabitDataSource {
     return (repeat: HabitRepeat.mensualmente, days: {day});
   }
 
-  // ── Categorías  ───────────────────────────────────────────────────────────
+  // Recordatorios
+  /// Columnas que pedimos siempre, el hábito, su categoría y su recordatorio
+  static const _select =
+      '*, categories(category_name), reminders(reminder_time, activate_reminder)';
 
-  /// Obtiene o crea el category_id para la categoría del hábito.
-  /// Usa [habit.categoryLabel] para soportar tanto categorías predefinidas
-  /// como las personalizadas creadas por el usuario.
+  static String _timeToDb(({int hour, int minute}) time) {
+    final h = time.hour.toString().padLeft(2, '0');
+    final m = time.minute.toString().padLeft(2, '0');
+    return '$h:$m:00';
+  }
+
+
+  static ({int hour, int minute}) _timeFromDb(String value) {
+    final parts = value.split(':');
+    return (hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+  }
+
+  static Map<String, dynamic>? _reminderRow(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is List && value.isNotEmpty) {
+      return value.first as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  Future<void> _saveReminder(String habitId, Habit habit) async {
+    final time = habit.reminderTime;
+    if (time == null) {
+      await _client.from('reminders').delete().eq('habit_id', habitId);
+      return;
+    }
+    // upsert = insertar o, si ya existe una fila con ese habit_id, actualizarla
+    await _client.from('reminders').upsert({
+      'habit_id': habitId,
+      'reminder_time': _timeToDb(time),
+      'activate_reminder': habit.remindersEnabled,
+    }, onConflict: 'habit_id');
+  }
+
+  /// Vuelve a leer un hábito ya guardado, con su recordatorio incluido
+  Future<Habit> _fetchHabit(String habitId) async {
+    final row = await _client
+        .from('habits')
+        .select(_select)
+        .eq('habit_id', habitId)
+        .single();
+    return _rowToHabit(row);
+  }
+
+  // categorias
+
   Future<String> _resolveCategoryId(Habit habit) async {
     final label = habit.categoryLabel;
 
@@ -131,7 +169,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
 
     final userId = _userId;
 
-    // Busca la categoría existente del usuario.
+    // Busca la categoría existente del usuario
     final rows = await _client
         .from('categories')
         .select('category_id')
@@ -145,7 +183,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
       return id;
     }
 
-    // Si no existe, la crea.
+    // Si no existe, la crea
     final inserted = await _client
         .from('categories')
         .insert({'category_name': label, 'user_id': userId})
@@ -157,7 +195,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
     return id;
   }
 
-  /// Carga todas las categorías del usuario para poblar el caché.
+  /// Carga todas las categorías del usuario para poblar el caché
   Future<void> _loadCategories() async {
     if (_categoryCache.isNotEmpty) return;
 
@@ -171,18 +209,16 @@ class SupabaseHabitDataSource implements HabitDataSource {
       _categoryCache[row['category_name'] as String] =
           row['category_id'] as String;
     }
-  }
+    }
 
-  // ── Conversión completa  ──────────────────────────────────────────────────
-
-  Habit _rowToHabit(Map<String, dynamic> row) {
+    Habit _rowToHabit(Map<String, dynamic> row) {
     final freq = _frequencyFromDb(
       row['frequency'] as String?,
       row['days_of_week'] as List<dynamic>?,
       (row['day_of_month'] as num?)?.toInt(),
     );
 
-    // Busca la categoría por nombre en el caché. Si no la encuentra, usa la primera.
+    // Busca la categoría por nombre en el caché. Si no la encuentra, usa la primera del enum
     final categoryName = row['categories']?['category_name'] as String?;
     HabitCategory category = HabitCategory.values.first;
     if (categoryName != null) {
@@ -191,11 +227,13 @@ class SupabaseHabitDataSource implements HabitDataSource {
           (c) => c.label == categoryName,
         );
       } catch (_) {
-        // Categoría desconocida: usar la primera por defecto.
+        // Si no es una categoría predefinida, usamos la primera del enum
       }
     }
 
     final colorHex = row['color'] as String?;
+    final reminder = _reminderRow(row['reminders']);
+    final reminderTime = reminder?['reminder_time'] as String?;
 
     return Habit(
       id: row['habit_id'] as String,
@@ -210,15 +248,16 @@ class SupabaseHabitDataSource implements HabitDataSource {
       repeat: freq.repeat,
       days: freq.days,
       allDay: false,
-      reminderTime: null,
-      goalPerDay: 1,
+      reminderTime: reminderTime != null ? _timeFromDb(reminderTime) : null,
+      goalPerDay: (row['goal_per_day'] as num?)?.toInt() ?? 1,
       allowSkip: (row['allow_skip'] as bool?) ?? false,
-      remindersEnabled: true,
+      // Sin fila en reminders = sin recordatorio
+      remindersEnabled: (reminder?['activate_reminder'] as bool?) ?? false,
       createdAt: DateTime.parse(row['created_date'] as String),
     );
   }
 
-  // ── Implementación de HabitDataSource  ───────────────────────────────────
+  //HabitDataSource
 
   @override
   Future<List<Habit>> getHabits() {
@@ -227,7 +266,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
 
       final rows = await _client
           .from('habits')
-          .select('*, categories(category_name)')
+          .select(_select)
           .eq('user_id', _userId)
           .isFilter('deleted_at', null)
           .order('created_at');
@@ -253,13 +292,18 @@ class SupabaseHabitDataSource implements HabitDataSource {
             'color': _colorToHex(habit.colorValue),
             'type': _typeToDb(habit.type),
             'allow_skip': habit.allowSkip,
+            'goal_per_day': habit.goalPerDay,
             'created_date': isoDate(habit.createdAt),
             ...freqData,
           })
-          .select('*, categories(category_name)')
+          .select('habit_id')
           .single();
 
-      return _rowToHabit(row);
+      // El recordatorio va en otra tabla, así que lo guardamos aparte con
+      // el id que Supabase le da al hábito
+      final id = row['habit_id'] as String;
+      await _saveReminder(id, habit);
+      return _fetchHabit(id);
     });
   }
 
@@ -278,21 +322,23 @@ class SupabaseHabitDataSource implements HabitDataSource {
             'color': _colorToHex(habit.colorValue),
             'type': _typeToDb(habit.type),
             'allow_skip': habit.allowSkip,
+            'goal_per_day': habit.goalPerDay,
             ...freqData,
           })
           .eq('habit_id', habit.id)
           .eq('user_id', _userId)
-          .select('*, categories(category_name)');
+          .select('habit_id');
 
       if (rows.isEmpty) throw HabitNotFoundException(habit.id);
-      return _rowToHabit(rows.first);
+      await _saveReminder(habit.id, habit);
+      return _fetchHabit(habit.id);
     });
   }
 
   @override
   Future<void> deleteHabit(String id) {
     return _request('No se pudo eliminar el hábito', () async {
-      // Soft-delete: marcamos deleted_at.
+
       final rows = await _client
           .from('habits')
           .update({'deleted_at': DateTime.now().toIso8601String()})
@@ -304,7 +350,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
     });
   }
 
-  // ── Utilidades  ───────────────────────────────────────────────────────────
+  // utilidades
 
   @override
   Future<Map<String, LogStatus>> getLogStatusesForDay(DateTime day) {
@@ -316,7 +362,9 @@ class SupabaseHabitDataSource implements HabitDataSource {
 
       return {
         for (final row in rows)
-          row['habit_id'] as String: LogStatus.values.byName(row['status'] as String),
+          row['habit_id'] as String: LogStatus.values.byName(
+            row['status'] as String,
+          ),
       };
     });
   }
@@ -327,10 +375,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
     return user.id;
   }
 
-  Future<T> _request<T>(
-    String errorMessage,
-    Future<T> Function() query,
-  ) async {
+  Future<T> _request<T>(String errorMessage, Future<T> Function() query) async {
     try {
       return await query();
     } on HabitNotFoundException {
@@ -343,4 +388,4 @@ class SupabaseHabitDataSource implements HabitDataSource {
       throw Exception(errorMessage);
     }
   }
-}
+  }
