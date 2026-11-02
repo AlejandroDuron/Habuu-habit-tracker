@@ -200,96 +200,93 @@ class _HabitListCard extends StatelessWidget {
     required this.index,
     required this.onTap,
   });
- 
+
   final Habit habit;
- 
+
   /// Posición en la lista; la necesita el listener de arrastre
   final int index;
   final VoidCallback onTap;
- 
+
   String get _subtitle {
     final times = habit.goalPerDay == 1 ? 'VEZ' : 'VECES';
     return '${habit.goalPerDay} $times AL DÍA · ${habit.category.label.toUpperCase()}';
   }
- 
+
   @override
   Widget build(BuildContext context) {
     final color = Color(habit.colorValue);
 
-    return Material(
-      type: MaterialType.transparency,
-      child: Ink(
-        decoration: BoxDecoration(
-          color: HabuuColors.white100,
-          borderRadius: BorderRadius.circular(HabuuRadius.sm),
-          boxShadow: const [habuuCardShadow],
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(HabuuRadius.sm),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: HabuuColors.white100,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [habuuCardShadow],
+      ),
+      child: Row(
+        children: [
+          // Ícono con anillo de color, igual al de SimpleHabitCard
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color.withValues(alpha: 0.25),
-                    border: Border.all(color: color, width: 2),
-                  ),
-                  child: Icon(
-                    habitIconFor(habit.iconIndex),
-                    size: 18,
-                    color: HabuuIconColors.black,
+                // Anillo de color
+                SizedBox.expand(
+                  child: CircularProgressIndicator(
+                    value: 1,
+                    strokeWidth: 2,
+                    backgroundColor: HabuuColors.grey150,
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        habit.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: HabuuText.bodySmSemibold.copyWith(
-                          color: HabuuColors.black100,
-                        ),
-                      ),
-                      Text(
-                        _subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: HabuuText.captionSmMedium.copyWith(
-                          color: HabuuColors.black40,
-                        ),
-                      ),
-                    ],
-                  ),
+                Icon(
+                  habitIconFor(habit.iconIndex),
+                  size: 18,
+                  color: color,
                 ),
-                const SizedBox(width: 12),
-
-                ReorderableDragStartListener(
-                  index: index,
-                  child: Semantics(
-                    label: 'Mover ${habit.name}',
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.drag_indicator,
-                        size: 18,
-                        color: HabuuIconColors.black,
-                      ),
-                    ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  habit.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: HabuuText.bodySmSemibold,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: HabuuText.captionSmMedium.copyWith(
+                    color: HabuuColors.black60,
                   ),
                 ),
               ],
             ),
           ),
-        ),
+          const SizedBox(width: 12),
+          // 6 puntos de arrastre en lugar del lápiz
+          ReorderableDragStartListener(
+            index: index,
+            child: Semantics(
+              label: 'Mover ${habit.name}',
+              child: const Icon(
+                Icons.drag_indicator,
+                size: 18,
+                color: HabuuIconColors.black,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

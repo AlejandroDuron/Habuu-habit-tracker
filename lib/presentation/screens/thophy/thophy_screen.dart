@@ -1,34 +1,48 @@
 import 'package:flutter/material.dart';
-import '../../widgets/thophies/trophy_card.dart'; 
-import '../../../config/theme/tokens.dart';
+import 'package:provider/provider.dart';
 
-class _Trophy {
-  const _Trophy(this.title, this.imagePath);
-  final String title;
-  final String imagePath;
+import '../../../config/theme/tokens.dart';
+import '../../../data/models/trophy.dart';
+import '../../providers/trophies_provider.dart';
+import '../../widgets/thophies/trophy_card.dart';
+
+/// Mapeo de trophy_key → ruta del asset de imagen.
+String _imageForKey(String? key) {
+  const map = {
+    'day_completed': 'assets/images/calendar/day_completed.png',
+    'streak_7': 'assets/images/calendar/streak_7.png',
+    'new_habits': 'assets/images/calendar/new_habits.png',
+    'streak_14': 'assets/images/calendar/streak_14.png',
+    'discipline': 'assets/images/calendar/discipline.png',
+    'one_month': 'assets/images/calendar/one_month.png',
+    'streak_300': 'assets/images/calendar/streak_300.png',
+  };
+  return map[key] ?? 'assets/images/calendar/day_completed.png';
 }
 
-class TrophiesScreen extends StatelessWidget {
+class TrophiesScreen extends StatefulWidget {
   const TrophiesScreen({super.key});
 
+  @override
+  State<TrophiesScreen> createState() => _TrophiesScreenState();
+}
+
+class _TrophiesScreenState extends State<TrophiesScreen> {
   static const Color _textDark = HabuuColors.success800;
 
-  // TODO: reemplazar por datos reales
-  static const _earned = [
-    _Trophy('Día completado', 'assets/images/calendar/day_completed.png'),
-  ];
-
-  static const _locked = [
-    _Trophy('7 días de racha', 'assets/images/calendar/streak_7.png'),
-    _Trophy('Hábitos nuevos', 'assets/images/calendar/new_habits.png'),
-    _Trophy('14+ rachas', 'assets/images/calendar/streak_14.png'),
-    _Trophy('Disciplina', 'assets/images/calendar/discipline.png'),
-    _Trophy('1+ mes con Habuu', 'assets/images/calendar/one_month.png'),
-    _Trophy('300 rachas', 'assets/images/calendar/streak_300.png'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Carga los trofeos al abrir la pantalla si aún no se han cargado.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TrophiesProvider>().loadTrophies();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<TrophiesProvider>();
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -49,13 +63,72 @@ class TrophiesScreen extends StatelessWidget {
                   tooltip: 'Volver',
                 ),
                 const SizedBox(height: 8),
-                _SectionTitle('Trofeos ganados'),
-                const SizedBox(height: 16),
-                _TrophyGrid(trophies: _earned),
-                const SizedBox(height: 32),
-                _SectionTitle('Trofeos por ganar'),
-                const SizedBox(height: 16),
-                _TrophyGrid(trophies: _locked, locked: true),
+
+                if (provider.isLoading) ...[
+                  const SizedBox(height: 80),
+                  const Center(
+                    child: CircularProgressIndicator(
+                      color: HabuuColors.success700,
+                    ),
+                  ),
+                ] else if (provider.status == TrophiesStatus.error) ...[
+                  const SizedBox(height: 80),
+                  Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          provider.errorMessage ?? 'Algo salió mal',
+                          style: HabuuText.bodySmMedium.copyWith(
+                            color: _textDark,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () =>
+                              context.read<TrophiesProvider>().loadTrophies(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: HabuuColors.success700,
+                            foregroundColor: HabuuColors.white100,
+                          ),
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  _SectionTitle('Trofeos ganados'),
+                  const SizedBox(height: 16),
+                  if (provider.earned.isEmpty)
+                    Text(
+                      'Aún no has ganado trofeos. ¡Sigue así!',
+                      style: HabuuText.bodySmMedium.copyWith(
+                        color: _textDark.withValues(alpha: 0.7),
+                      ),
+                    )
+                  else
+                    _TrophyGrid(
+                      trophies: provider.earned
+                          .map((e) => (e.trophy, false))
+                          .toList(),
+                    ),
+                  const SizedBox(height: 32),
+                  _SectionTitle('Trofeos por ganar'),
+                  const SizedBox(height: 16),
+                  if (provider.locked.isEmpty)
+                    Text(
+                      '¡Ya ganaste todos los trofeos!',
+                      style: HabuuText.bodySmMedium.copyWith(
+                        color: _textDark.withValues(alpha: 0.7),
+                      ),
+                    )
+                  else
+                    _TrophyGrid(
+                      trophies: provider.locked
+                          .map((t) => (t, true))
+                          .toList(),
+                    ),
+                ],
               ],
             ),
           ),
@@ -81,13 +154,11 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-/// Cuadrícula de 3 columnas con alturas flexibles (los títulos pueden
-/// ocupar una o dos líneas).
+/// Cuadrícula de 3 columnas. Recibe tuplas (Trophy, locked).
 class _TrophyGrid extends StatelessWidget {
-  const _TrophyGrid({required this.trophies, this.locked = false});
+  const _TrophyGrid({required this.trophies});
 
-  final List<_Trophy> trophies;
-  final bool locked;
+  final List<(Trophy, bool)> trophies;
 
   static const int _columns = 3;
   static const double _spacing = 16;
@@ -103,12 +174,12 @@ class _TrophyGrid extends StatelessWidget {
           spacing: _spacing,
           runSpacing: 16,
           children: [
-            for (final t in trophies)
+            for (final (trophy, locked) in trophies)
               SizedBox(
                 width: itemWidth,
                 child: TrophyCard(
-                  title: t.title,
-                  imagePath: t.imagePath,
+                  title: trophy.name,
+                  imagePath: _imageForKey(trophy.key),
                   size: itemWidth,
                   locked: locked,
                 ),

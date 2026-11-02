@@ -12,11 +12,22 @@ class HabitsListView extends StatelessWidget {
     super.key,
     required this.habits,
     required this.onEdit,
+    this.onDelete,
+    this.onMove,
     this.isLoading = false,
   });
 
   final List<Habit> habits;
+
+  /// Abre la pantalla de edición para el hábito seleccionado.
   final ValueChanged<Habit> onEdit;
+
+  /// Elimina el hábito seleccionado. Si es null, la opción no aparece.
+  final ValueChanged<Habit>? onDelete;
+
+  /// Abre el diálogo de reordenamiento. Si es null, la opción no aparece.
+  final ValueChanged<Habit>? onMove;
+
   final bool isLoading;
 
   @override
@@ -44,7 +55,7 @@ class HabitsListView extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
           sliver: SliverList.separated(
             itemCount: habits.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            separatorBuilder: (context, _) => const SizedBox(height: 12),
             itemBuilder: (context, i) {
               final habit = habits[i];
               return SimpleHabitCard(
@@ -56,6 +67,8 @@ class HabitsListView extends StatelessWidget {
                   iconColor: Color(habit.colorValue),
                 ),
                 onEdit: () => onEdit(habit),
+                onDelete: onDelete == null ? null : () => onDelete!(habit),
+                onMove: onMove == null ? null : () => onMove!(habit),
               );
             },
           ),

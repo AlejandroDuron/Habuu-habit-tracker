@@ -15,6 +15,9 @@ enum FrogMotion {
 
   /// Respira despacio, como cuando está dormida.
   breathe,
+
+  /// Flota suavemente arriba y abajo, como mecida por el agua.
+  float,
 }
 
 /// Ranita animada que se repite en bucle.
@@ -74,6 +77,7 @@ class _AnimatedFrogState extends State<AnimatedFrog>
         FrogMotion.sway => const Duration(milliseconds: 1600),
         FrogMotion.hopSideToSide => const Duration(milliseconds: 1800),
         FrogMotion.breathe => const Duration(milliseconds: 3200),
+        FrogMotion.float => const Duration(milliseconds: 2400),
       };
 
   @override
@@ -142,6 +146,7 @@ class _AnimatedFrogState extends State<AnimatedFrog>
               FrogMotion.sway => _sway(t),
               FrogMotion.hopSideToSide => _hopSideToSide(t),
               FrogMotion.breathe => _breathe(t),
+              FrogMotion.float => _float(t),
             };
 
             return Stack(
@@ -246,6 +251,13 @@ class _AnimatedFrogState extends State<AnimatedFrog>
   _Pose _breathe(double t) {
     final b = math.sin(2 * math.pi * t);
     return _Pose(scaleX: 1 - 0.015 * b, scaleY: 1 + 0.03 * b);
+  }
+
+  /// Flota suavemente arriba y abajo usando la altura del salto como amplitud.
+  /// La curva es un seno suavizado para que el movimiento se sienta orgánico.
+  _Pose _float(double t) {
+    final lift = (math.sin(2 * math.pi * t) + 1) / 2; // 0..1
+    return _Pose(lift: lift * 0.5);
   }
 }
 
