@@ -12,7 +12,6 @@ import '../../widgets/home/habit_section.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/home/today_card.dart';
 import '../../widgets/thophies/trophy_earned_toast.dart';
-import '../habits/habits_screen.dart';
 
 /// Pantalla Home de Habuu
 class HomePage extends StatefulWidget {
@@ -40,14 +39,6 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _expandedHabitId = _expandedHabitId == card.habitId ? null : card.habitId;
     });
-  }
-
-  /// Abre la lista con todos los hábitos. Al volver se recarga el Home,
-  /// por si se editó o se borró alguno.
-  Future<void> _openAllHabits() async {
-    await Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (_) => const HabitsScreen()));
-    if (mounted) await context.read<HomeProvider>().load();
   }
 
   /// Marca el hábito como cumplido, con foto o sin ella, y cierra el panel.
@@ -114,7 +105,6 @@ class _HomePageState extends State<HomePage> {
                     _HabitsContent(
                       home: home,
                       onDone: _togglePanel,
-                      onShowMore: _openAllHabits,
                       expandedHabitId: _expandedHabitId,
                       panelBuilder: (card) => EvidencePanel(
                         allowSkip: card.allowSkip,
@@ -146,14 +136,12 @@ class _HabitsContent extends StatelessWidget {
   const _HabitsContent({
     required this.home,
     required this.onDone,
-    required this.onShowMore,
     required this.expandedHabitId,
     required this.panelBuilder,
   });
 
   final HomeProvider home;
   final ValueChanged<HabitCardData> onDone;
-  final VoidCallback onShowMore;
   final String? expandedHabitId;
   final Widget Function(HabitCardData card) panelBuilder;
 
@@ -179,7 +167,6 @@ class _HabitsContent extends StatelessWidget {
         title: 'Hábitos',
         items: home.habits.map(HabitCardData.fromTodayHabit).toList(),
         onDone: onDone,
-        onShowMore: onShowMore,
         expandedHabitId: expandedHabitId,
         expandedBuilder: panelBuilder,
       ),

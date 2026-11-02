@@ -4,13 +4,12 @@ import 'package:provider/provider.dart';
 import '../../../config/theme/tokens.dart';
 import '../../../data/models/habit.dart';
 import '../../providers/habits_provider.dart';
-import '../../widgets/habits_list/category_chips.dart';
+import '../../widgets/habits_list/habit_filter_chips.dart';
 import '../../widgets/habits_list/habits_list_header.dart';
 import '../../widgets/habits_list/habits_list_view.dart';
 import '../../widgets/habits_list/period_segment.dart';
 import '../../widgets/shared/add_habit_fab.dart';
 import 'habit_form_screen.dart';
-import 'habits_screen.dart';
 
 const _periods = ['Hoy', 'Semana', 'Todo'];
 
@@ -21,19 +20,7 @@ const _periodFilters = [
   HabitPeriodFilter.all,
 ];
 
-/// Etiquetas de chips de filtro.
-const _chips = ['Todo', 'Frecuente', 'Fugaz', 'Salud', 'Hogar', 'Universidad', 'Omitidos'];
 
-/// Mapeo de índice de chip → [HabitChipFilter].
-const _chipFilters = [
-  HabitChipFilter.all,
-  HabitChipFilter.frequent,
-  HabitChipFilter.fleeting,
-  HabitChipFilter.health,
-  HabitChipFilter.home,
-  HabitChipFilter.university,
-  HabitChipFilter.omitted,
-];
 
 /// Pantalla "Tus Hábitos": lista filtrable por período, tipo y categoría.
 ///
@@ -53,15 +40,6 @@ class HabitsListScreen extends StatelessWidget {
   void _openNew(BuildContext context) {
     Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(builder: (_) => const HabitFormScreen()),
-    );
-  }
-
-  void _openAllHabits(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) =>
-            HabitsScreen(onBack: () => Navigator.of(context).pop()),
-      ),
     );
   }
 
@@ -182,7 +160,6 @@ class HabitsListScreen extends StatelessWidget {
 
     // Índices actuales para los widgets de filtro.
     final periodIndex = _periodFilters.indexOf(provider.periodFilter);
-    final chipIndex = _chipFilters.indexOf(provider.chipFilter);
 
     return Scaffold(
       body: DecoratedBox(
@@ -194,9 +171,7 @@ class HabitsListScreen extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                child: HabitsListHeader(
-                  onMore: () => _openAllHabits(context),
-                ),
+                child: HabitsListHeader(),
               ),
               const SizedBox(height: 20),
               Padding(
@@ -208,15 +183,19 @@ class HabitsListScreen extends StatelessWidget {
                       provider.setPeriodFilter(_periodFilters[i]),
                 ),
               ),
-              const SizedBox(height: 16),
-              CategoryChips(
-                categories: _chips,
-                selected: chipIndex < 0 ? 0 : chipIndex,
-                onChanged: (i) => provider.setChipFilter(_chipFilters[i]),
+
+              const SizedBox(height: 20),
+              HabitFilterChips(
+                chipFilter: provider.chipFilter,
+                categoryFilter: provider.categoryFilter,
+                categories: provider.availableCategories,
+                onTypeChanged: provider.setChipFilter,
+                onCategoryChanged: provider.setCategoryFilter,
+                onReset: provider.resetFilters,
               ),
               const SizedBox(height: 20),
-              // Expanded + HabitsListView (CustomScrollView con SliverList):
-              // Flutter construye cada tarjeta solo cuando entra en pantalla.
+
+              const SizedBox(height: 20),
               Expanded(
                 child: HabitsListView(
                   habits: provider.filteredHabits,

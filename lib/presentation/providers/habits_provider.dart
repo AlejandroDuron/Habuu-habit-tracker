@@ -11,14 +11,11 @@ import 'trophies_provider.dart';
 /// Período de tiempo para filtrar la lista de hábitos.
 enum HabitPeriodFilter { today, week, all }
 
-/// Filtro combinado de tipo y categoría.
+/// Filtro combinado de tipo y estado.
 enum HabitChipFilter {
   all,
   frequent,
   fleeting,
-  health,
-  home,
-  university,
   omitted,
 }
 
@@ -54,6 +51,9 @@ class HabitsProvider extends ChangeNotifier {
   HabitPeriodFilter _periodFilter = HabitPeriodFilter.all;
   HabitChipFilter _chipFilter = HabitChipFilter.all;
 
+  /// null = todas las categorías; cualquier otro string = filtrar por ese label.
+  String? _categoryFilter;
+
   // ── Getters básicos ──────────────────────────────────────────────────────
 
   List<Habit> get habits => List.unmodifiable(_habits);
@@ -65,6 +65,21 @@ class HabitsProvider extends ChangeNotifier {
 
   HabitPeriodFilter get periodFilter => _periodFilter;
   HabitChipFilter get chipFilter => _chipFilter;
+
+  /// Categoría activa como string (null = todas).
+  String? get categoryFilter => _categoryFilter;
+
+  /// Lista de categorías únicas presentes en los hábitos cargados,
+  /// ordenadas alfabéticamente. Se usa para construir los chips dinámicamente.
+  List<String> get availableCategories {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final h in _habits) {
+      if (seen.add(h.categoryLabel)) result.add(h.categoryLabel);
+    }
+    result.sort();
+    return result;
+  }
 
   List<Habit> get frequentHabits =>
       _habits.where((h) => h.type == HabitType.frecuente).toList();
@@ -78,7 +93,9 @@ class HabitsProvider extends ChangeNotifier {
   /// Se recalcula solo cuando cambia _habits o algún filtro.
   List<Habit> get filteredHabits {
     final byPeriod = _applyPeriodFilter(_habits);
-    return _applyChipFilter(byPeriod);
+    final byChip = _applyChipFilter(byPeriod);
+    if (_categoryFilter == null) return byChip;
+    return byChip.where((h) => h.categoryLabel == _categoryFilter).toList();
   }
 
   // ── Cambio de filtros ────────────────────────────────────────────────────
@@ -92,6 +109,19 @@ class HabitsProvider extends ChangeNotifier {
   void setChipFilter(HabitChipFilter filter) {
     if (_chipFilter == filter) return;
     _chipFilter = filter;
+    notifyListeners();
+  }
+
+  void setCategoryFilter(String? category) {
+    if (_categoryFilter == category) return;
+    _categoryFilter = category;
+    notifyListeners();
+  }
+
+  void resetFilters() {
+    if (_chipFilter == HabitChipFilter.all && _categoryFilter == null) return;
+    _chipFilter = HabitChipFilter.all;
+    _categoryFilter = null;
     notifyListeners();
   }
 
@@ -138,12 +168,6 @@ class HabitsProvider extends ChangeNotifier {
         all.where((h) => h.type == HabitType.frecuente).toList(),
       HabitChipFilter.fleeting =>
         all.where((h) => h.type == HabitType.fugaz).toList(),
-      HabitChipFilter.health =>
-        all.where((h) => h.category == HabitCategory.salud).toList(),
-      HabitChipFilter.home =>
-        all.where((h) => h.category == HabitCategory.hogar).toList(),
-      HabitChipFilter.university =>
-        all.where((h) => h.category == HabitCategory.universidad).toList(),
       HabitChipFilter.omitted =>
         all.where((h) => _logStatuses[h.id] == LogStatus.skipped).toList(),
       HabitChipFilter.all => all,

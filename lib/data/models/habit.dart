@@ -42,7 +42,9 @@ class Habit {
     this.allDay = false,
     this.allowSkip = false,
     this.remindersEnabled = true,
-  })  : assert(name.trim().isNotEmpty, 'El nombre no puede ir vacío'),
+    String? categoryLabel,
+  })  : categoryLabel = categoryLabel ?? category.label,
+        assert(name.trim().isNotEmpty, 'El nombre no puede ir vacío'),
         assert(goalPerDay > 0, 'La meta tiene que ser al menos 1'),
         assert(iconIndex >= 0, 'El índice del ícono no puede ser negativo'),
         assert(
@@ -58,6 +60,11 @@ class Habit {
   final String name;
   final HabitType type;
   final HabitCategory category;
+
+  /// Nombre real de la categoría. Para las predefinidas coincide con
+  /// [category.label]; para las personalizadas guarda el texto ingresado
+  /// por el usuario (que no está en el enum [HabitCategory]).
+  final String categoryLabel;
 
   /// Posición del ícono elegido en la fila de icons.
   final int iconIndex;
@@ -91,6 +98,7 @@ class Habit {
     String? name,
     HabitType? type,
     HabitCategory? category,
+    String? categoryLabel,
     int? iconIndex,
     int? colorValue,
     HabitRepeat? repeat,
@@ -109,6 +117,7 @@ class Habit {
       name: name ?? this.name,
       type: type ?? this.type,
       category: category ?? this.category,
+      categoryLabel: categoryLabel ?? this.categoryLabel,
       iconIndex: iconIndex ?? this.iconIndex,
       colorValue: colorValue ?? this.colorValue,
       repeat: clearRepeat ? null : (repeat ?? this.repeat),
@@ -129,6 +138,7 @@ class Habit {
       'name': name,
       'type': type.name,
       'category': category.name,
+      'categoryLabel': categoryLabel,
       'iconIndex': iconIndex,
       'colorValue': colorValue,
       'repeat': repeat?.name,
@@ -154,6 +164,7 @@ class Habit {
       name: map['name'] as String,
       type: HabitType.values.byName(map['type'] as String),
       category: HabitCategory.values.byName(map['category'] as String),
+      categoryLabel: map['categoryLabel'] as String?,
       iconIndex: (map['iconIndex'] as num).toInt(),
       colorValue: (map['colorValue'] as num).toInt(),
       repeat: repeatName == null ? null : HabitRepeat.values.byName(repeatName),

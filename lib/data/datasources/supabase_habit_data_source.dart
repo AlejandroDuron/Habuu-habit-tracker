@@ -121,12 +121,11 @@ class SupabaseHabitDataSource implements HabitDataSource {
 
   // ── Categorías  ───────────────────────────────────────────────────────────
 
-  /// Nombre del enum HabitCategory en la DB (en inglés → usamos el nombre Dart).
-  static String _categoryLabel(HabitCategory cat) => cat.label;
-
-  /// Obtiene o crea el category_id para [category] del usuario actual.
-  Future<String> _resolveCategoryId(HabitCategory category) async {
-    final label = _categoryLabel(category);
+  /// Obtiene o crea el category_id para la categoría del hábito.
+  /// Usa [habit.categoryLabel] para soportar tanto categorías predefinidas
+  /// como las personalizadas creadas por el usuario.
+  Future<String> _resolveCategoryId(Habit habit) async {
+    final label = habit.categoryLabel;
 
     if (_categoryCache.containsKey(label)) return _categoryCache[label]!;
 
@@ -203,6 +202,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
       name: row['habit_name'] as String,
       type: _typeFromDb(row['type'] as String),
       category: category,
+      categoryLabel: categoryName ?? category.label,
       iconIndex: _indexForIconKey(row['icon_key'] as String),
       colorValue: colorHex != null
           ? _hexToColor(colorHex)
@@ -239,7 +239,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
   @override
   Future<Habit> createHabit(Habit habit) {
     return _request('No se pudo crear el hábito', () async {
-      final categoryId = await _resolveCategoryId(habit.category);
+      final categoryId = await _resolveCategoryId(habit);
 
       final freqData = _frequencyToDb(habit.repeat, habit.days);
 
@@ -266,7 +266,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
   @override
   Future<Habit> updateHabit(Habit habit) {
     return _request('No se pudieron guardar los cambios', () async {
-      final categoryId = await _resolveCategoryId(habit.category);
+      final categoryId = await _resolveCategoryId(habit);
       final freqData = _frequencyToDb(habit.repeat, habit.days);
 
       final rows = await _client
