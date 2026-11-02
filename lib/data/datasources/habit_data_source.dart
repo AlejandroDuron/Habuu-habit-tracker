@@ -1,4 +1,5 @@
 import '../models/habit.dart';
+import '../models/habit_log.dart';
  
 abstract interface class HabitDataSource {
   /// Devuelve todos los hábitos guardados
@@ -13,6 +14,10 @@ abstract interface class HabitDataSource {
   /// Borra un hábito por su id
 
   Future<void> deleteHabit(String id);
+
+  /// Devuelve un mapa de habit_id → LogStatus para los registros de [day].
+  /// Solo incluye hábitos que tienen un log ese día.
+  Future<Map<String, LogStatus>> getLogStatusesForDay(DateTime day);
 }
  
 /// Error propio para cuando se busca un hábito que no existe

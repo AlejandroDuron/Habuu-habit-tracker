@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../config/theme/tokens.dart';
+import '../../models/home/calendar_day.dart';
 import '../../models/home/habit_card_data.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/trophies_provider.dart';
@@ -12,7 +13,6 @@ import '../../widgets/home/home_header.dart';
 import '../../widgets/home/today_card.dart';
 import '../../widgets/thophies/trophy_earned_toast.dart';
 import '../habits/habits_screen.dart';
-import 'home_mock_data.dart';
 
 /// Pantalla Home de Habuu
 class HomePage extends StatefulWidget {
@@ -66,6 +66,21 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Genera la tira de días del calendario: 4 antes de hoy, hoy, 4 después.
+  /// Hoy se marca con [isToday] y, si [frogAwake] es true, con [hasFrog].
+  List<CalendarDay> _buildDays(bool frogAwake) {
+    final now = DateTime.now();
+    return List.generate(9, (i) {
+      final date = now.subtract(Duration(days: 4 - i));
+      final isToday = i == 4;
+      return CalendarDay(
+        day: '${date.day}',
+        isToday: isToday,
+        hasFrog: isToday && frogAwake,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final home = context.watch<HomeProvider>();
@@ -94,7 +109,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     const HomeHeader(),
                     const SizedBox(height: 23),
-                    TodayCard(days: HomeMockData.days, frogAwake: home.frogAwake),
+                    TodayCard(days: _buildDays(home.frogAwake), frogAwake: home.frogAwake),
                     const SizedBox(height: 23),
                     _HabitsContent(
                       home: home,
@@ -102,6 +117,7 @@ class _HomePageState extends State<HomePage> {
                       onShowMore: _openAllHabits,
                       expandedHabitId: _expandedHabitId,
                       panelBuilder: (card) => EvidencePanel(
+                        allowSkip: card.allowSkip,
                         onSave: (photo) => _complete(card, photo: photo),
                         onSkip: () => _complete(card),
                       ),

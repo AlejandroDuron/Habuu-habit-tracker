@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/datasources/habit_data_source.dart';
 import '../../data/models/habit.dart';
+import '../../data/models/habit_log.dart';
 import '../../data/repositories/habit_repository.dart';
 import 'trophies_provider.dart';
 
@@ -18,6 +19,7 @@ enum HabitChipFilter {
   health,
   home,
   university,
+  omitted,
 }
 
 // ── Provider ───────────────────────────────────────────────────────────────
@@ -36,9 +38,17 @@ class HabitsProvider extends ChangeNotifier {
     _trophies = trophies;
   }
 
+  /// Callback que se dispara después de crear, editar o borrar un hábito.
+  /// Lo usa [HomeProvider] para recargar el Home automáticamente.
+  VoidCallback? onHabitChanged;
+
   List<Habit> _habits = [];
   bool _isLoading = false;
   String? _errorMessage;
+
+  /// Estado del log de cada hábito hoy: habit_id → LogStatus.
+  /// Se carga junto con los hábitos para saber cuáles fueron omitidos.
+  Map<String, LogStatus> _logStatuses = {};
 
   // Filtros activos — la pantalla los cambia; el provider recalcula la vista.
   HabitPeriodFilter _periodFilter = HabitPeriodFilter.all;
@@ -49,6 +59,9 @@ class HabitsProvider extends ChangeNotifier {
   List<Habit> get habits => List.unmodifiable(_habits);
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+
+  /// Mapa de habit_id → LogStatus para hoy.
+  Map<String, LogStatus> get logStatuses => Map.unmodifiable(_logStatuses);
 
   HabitPeriodFilter get periodFilter => _periodFilter;
   HabitChipFilter get chipFilter => _chipFilter;
@@ -131,6 +144,8 @@ class HabitsProvider extends ChangeNotifier {
         all.where((h) => h.category == HabitCategory.hogar).toList(),
       HabitChipFilter.university =>
         all.where((h) => h.category == HabitCategory.universidad).toList(),
+      HabitChipFilter.omitted =>
+        all.where((h) => _logStatuses[h.id] == LogStatus.skipped).toList(),
       HabitChipFilter.all => all,
     };
   }
@@ -173,20 +188,37 @@ class HabitsProvider extends ChangeNotifier {
     return null;
   }
 
-  /// Carga los hábitos desde el repository. Se llama una vez al iniciar la app.
+  /// Carga los hábitos y sus logs del día desde el repository.
   Future<void> loadHabits() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      _habits = await _repository.getHabits();
+      // Carga hábitos y logs del día en paralelo.
+      final results = await Future.wait([
+        _repository.getHabits(),
+        _repository.getLogStatusesForDay(DateTime.now()),
+      ]);
+      _habits = results[0] as List<Habit>;
+      _logStatuses = results[1] as Map<String, LogStatus>;
     } catch (e) {
       _errorMessage = 'No se pudieron cargar tus hábitos';
       debugPrint('Error al cargar hábitos: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Recarga solo los logs del día (sin volver a traer todos los hábitos).
+  /// Útil cuando el usuario vuelve de omitir un hábito en el Home.
+  Future<void> reloadLogStatuses() async {
+    try {
+      _logStatuses = await _repository.getLogStatusesForDay(DateTime.now());
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error al recargar logs: $e');
     }
   }
 
@@ -223,6 +255,9 @@ class HabitsProvider extends ChangeNotifier {
         (e) => debugPrint('Error al evaluar one_month: $e'),
       );
 
+      // Notifica al Home para que recargue los hábitos del día.
+      onHabitChanged?.call();
+
       return true;
     } catch (e) {
       _errorMessage = 'No se pudo crear el hábito';
@@ -252,6 +287,8 @@ class HabitsProvider extends ChangeNotifier {
       ];
       _errorMessage = null;
       notifyListeners();
+      // Notifica al Home para que recargue los hábitos del día.
+      onHabitChanged?.call();
       return true;
     } on HabitNotFoundException {
       _errorMessage = 'Ese hábito ya no existe';
@@ -296,6 +333,8 @@ class HabitsProvider extends ChangeNotifier {
       _habits = _habits.where((h) => h.id != id).toList();
       _errorMessage = null;
       notifyListeners();
+      // Notifica al Home para que recargue los hábitos del día.
+      onHabitChanged?.call();
       return true;
     } on HabitNotFoundException {
       _errorMessage = 'Ese hábito ya no existe';

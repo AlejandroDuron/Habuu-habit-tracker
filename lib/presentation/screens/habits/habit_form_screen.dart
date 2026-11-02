@@ -264,31 +264,20 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       );
       return;
     }
- 
-    if (_isEditing) {
-      await Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const HabitSuccessScreen(
-            message: 'Hábito actualizado correctamente',
-          ),
-        ),
-      );
-      return;
-    }
- 
-    await Navigator.of(context, rootNavigator: true).push(
+
+    // Tanto para crear como para editar: reemplaza el formulario con la
+    // pantalla de éxito. Al pulsar "Aceptar" se regresa a la lista.
+    // La sincronización con el Home es automática: HabitsProvider.onHabitChanged
+    // dispara HomeProvider.load() sin que esta pantalla lo sepa.
+    await Navigator.of(context, rootNavigator: true).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => const HabitSuccessScreen(
-          message: 'Hábito creado correctamente',
+        builder: (_) => HabitSuccessScreen(
+          message: _isEditing
+              ? 'Hábito actualizado correctamente'
+              : 'Hábito creado correctamente',
         ),
       ),
     );
- 
-    if (!mounted) return;
-    _formKey.currentState?.reset();
-    setState(() => _loadValues(null));
-    widget.onSaved?.call();
   }
  
   void _goBack() {

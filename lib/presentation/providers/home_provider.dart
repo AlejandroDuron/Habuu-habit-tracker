@@ -4,6 +4,7 @@ import '../../data/datasources/home_data_source.dart';
 import '../../data/models/today_habit.dart';
 import '../../data/repositories/home_repository.dart';
 import '../../services/photo_compressor.dart';
+import 'habits_provider.dart';
 import 'streaks_provider.dart';
 import 'trophies_provider.dart';/// En qué punto está la carga del Home.
 enum HomeStatus { loading, ready, error, signedOut }
@@ -99,6 +100,9 @@ class HomeProvider extends ChangeNotifier {
       // Evalúa trofeos relacionados con el día y la racha.
       _evaluateTrophiesAfterMark(allDone: allDone);
 
+      // Sincroniza: el HabitsList necesita saber el nuevo estado del log.
+      _habitsProvider?.reloadLogStatuses();
+
       return null;
     } on NotSignedInException {
       return 'Inicia sesión para guardar tu progreso';
@@ -174,5 +178,18 @@ class HomeProvider extends ChangeNotifier {
   // ignore: use_setters_to_change_properties
   void setStreaksProvider(StreaksProvider streaks) {
     _streaksProvider = streaks;
+  }
+
+  // ── Sincronización con HabitsProvider ───────────────────────────────────
+
+  HabitsProvider? _habitsProvider;
+
+  /// Inyecta el [HabitsProvider] y registra el callback de sincronización:
+  /// cuando los hábitos cambian (crear/editar/borrar), el Home se recarga.
+  // ignore: use_setters_to_change_properties
+  void setHabitsProvider(HabitsProvider habits) {
+    _habitsProvider = habits;
+    // Cuando los hábitos cambian, recarga el Home.
+    habits.onHabitChanged = load;
   }
 }

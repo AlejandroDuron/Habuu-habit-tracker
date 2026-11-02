@@ -77,6 +77,9 @@ class AppProviders extends StatelessWidget {
         // ── HomeProvider ──────────────────────────────────────────────────
         // Depende de TrophiesProvider (day_completed, discipline, etc.)
         // y de StreaksProvider (leer racha actual al evaluar streak_7/14).
+        // También se conecta con HabitsProvider para sincronización
+        // bidireccional: cambios en hábitos recargan el Home, y marcar
+        // hábitos en el Home actualiza los logs en HabitsList.
         ChangeNotifierProxyProvider2<TrophiesProvider, StreaksProvider,
             HomeProvider>(
           create: (_) => HomeProvider(
@@ -86,10 +89,13 @@ class AppProviders extends StatelessWidget {
               dailySummaryDs,
             ),
           ),
-          update: (_, trophies, streaks, home) {
+          update: (context, trophies, streaks, home) {
+            // Lee HabitsProvider del árbol para inyectarlo en HomeProvider.
+            final habits = context.read<HabitsProvider>();
             home!
               ..setTrophiesProvider(trophies)
-              ..setStreaksProvider(streaks);
+              ..setStreaksProvider(streaks)
+              ..setHabitsProvider(habits);
             return home;
           },
         ),

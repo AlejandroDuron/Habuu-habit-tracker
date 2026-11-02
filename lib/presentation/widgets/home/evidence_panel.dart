@@ -11,10 +11,19 @@ import '../../../services/photo_picker.dart';
 ///
 /// "Guardar" marca el hábito con la foto elegida; "Omitir" lo marca sin foto.
 class EvidencePanel extends StatefulWidget {
-  const EvidencePanel({super.key, required this.onSave, required this.onSkip});
+  const EvidencePanel({
+    super.key,
+    required this.onSave,
+    required this.onSkip,
+    this.allowSkip = false,
+  });
 
   final Future<void> Function(Uint8List photo) onSave;
   final Future<void> Function() onSkip;
+
+  /// Si el hábito permite ser omitido. Si es false, el botón "Omitir"
+  /// no se muestra.
+  final bool allowSkip;
 
   @override
   State<EvidencePanel> createState() => _EvidencePanelState();
@@ -134,11 +143,13 @@ class _EvidencePanelState extends State<EvidencePanel> {
                     ),
                   ]
                 : [
-                    _TextButton(
-                      label: 'Omitir',
-                      onPressed: () => _run(widget.onSkip),
-                    ),
-                    const SizedBox(width: 10),
+                    if (widget.allowSkip) ...[
+                      _TextButton(
+                        label: 'Omitir',
+                        onPressed: () => _run(widget.onSkip),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
                     _OutlinedButton(
                       label: 'Guardar',
                       // Sin foto no hay nada que guardar.

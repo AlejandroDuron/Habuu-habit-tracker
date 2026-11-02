@@ -22,7 +22,7 @@ const _periodFilters = [
 ];
 
 /// Etiquetas de chips de filtro.
-const _chips = ['Todo', 'Frecuente', 'Fugaz', 'Salud', 'Hogar', 'Universidad'];
+const _chips = ['Todo', 'Frecuente', 'Fugaz', 'Salud', 'Hogar', 'Universidad', 'Omitidos'];
 
 /// Mapeo de índice de chip → [HabitChipFilter].
 const _chipFilters = [
@@ -32,6 +32,7 @@ const _chipFilters = [
   HabitChipFilter.health,
   HabitChipFilter.home,
   HabitChipFilter.university,
+  HabitChipFilter.omitted,
 ];
 
 /// Pantalla "Tus Hábitos": lista filtrable por período, tipo y categoría.

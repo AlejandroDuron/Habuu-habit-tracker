@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/assets.dart';
 import '../../utils/dates.dart';
 import '../models/habit.dart';
+import '../models/habit_log.dart';
 import 'habit_data_source.dart';
 
 /// Implementación real de [HabitDataSource] usando Supabase.
@@ -304,6 +305,21 @@ class SupabaseHabitDataSource implements HabitDataSource {
   }
 
   // ── Utilidades  ───────────────────────────────────────────────────────────
+
+  @override
+  Future<Map<String, LogStatus>> getLogStatusesForDay(DateTime day) {
+    return _request('No se pudo cargar el estado de tus hábitos', () async {
+      final rows = await _client
+          .from('habit_logs')
+          .select('habit_id, status')
+          .eq('log_date', isoDate(day));
+
+      return {
+        for (final row in rows)
+          row['habit_id'] as String: LogStatus.values.byName(row['status'] as String),
+      };
+    });
+  }
 
   String get _userId {
     final user = _client.auth.currentUser;

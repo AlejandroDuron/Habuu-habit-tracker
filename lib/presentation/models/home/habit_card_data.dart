@@ -15,10 +15,9 @@ class HabitCardData {
     required this.iconAsset,
     this.color = defaultColor,
     this.isDone = false,
+    this.allowSkip = false,
   });
 
-  /// Arma la tarjeta de un hábito de hoy. Si el ícono o el color guardados
-  /// no son válidos, usa los de por defecto en vez de fallar.
   factory HabitCardData.fromTodayHabit(TodayHabit today) {
     final habit = today.habit;
     return HabitCardData(
@@ -28,6 +27,7 @@ class HabitCardData {
       iconAsset: HabitIconAssets.forKey(habit.iconKey),
       color: colorFromHex(habit.color) ?? defaultColor,
       isDone: today.isDone,
+      allowSkip: habit.allowSkip,
     );
   }
 
@@ -46,6 +46,9 @@ class HabitCardData {
 
   /// Si ya se cumplió hoy.
   final bool isDone;
+
+  /// Si el usuario puede omitir este hábito en lugar de completarlo.
+  final bool allowSkip;
 
   /// Si el hábito no tiene meta escrita, se dice cada cuánto toca.
   static String _scheduleLabel(HomeHabit habit) {
