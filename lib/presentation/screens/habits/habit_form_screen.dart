@@ -122,6 +122,24 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     }
     return null;
   }
+
+  /// Valida que la combinación tipo + repetición + días sea coherente,
+  /// replicando el constraint chk_schedule de la base de datos.
+  String? _validateSchedule() {
+    if (_type == HabitType.fugaz) return null; // one_time no tiene schedule
+
+    switch (_repeat) {
+      case HabitRepeat.diariamente:
+        return null; // siempre válido
+      case HabitRepeat.semanalmente:
+        if (_days.isEmpty) return 'Elige al menos un día de la semana';
+      case HabitRepeat.mensualmente:
+        if (_days.isEmpty) return 'Elige el día del mes';
+        final day = _days.first;
+        if (day < 1 || day > 31) return 'El día del mes debe ser entre 1 y 31';
+    }
+    return null;
+  }
  
   // Guardar
  
@@ -151,7 +169,16 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   Future<void> _save() async {
     // Primero validamos todo el formulario; si algo falla no se guarda
     if (!_formKey.currentState!.validate()) return;
- 
+
+    // Validación del schedule (replica chk_schedule de la BD).
+    final scheduleError = _validateSchedule();
+    if (scheduleError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(scheduleError)),
+      );
+      return;
+    }
+
     // Cerramos el teclado antes de navegar
     FocusScope.of(context).unfocus();
     setState(() => _isSaving = true);

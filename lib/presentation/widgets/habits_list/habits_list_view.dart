@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../../config/theme/tokens.dart';
 import '../../../data/models/habit.dart';
@@ -47,28 +48,35 @@ class HabitsListView extends StatelessWidget {
       );
     }
 
-    // CustomScrollView une la lista y el footer "Omitidos" en un solo scroll,
-    // sin necesidad de anidar Column + Expanded adentro de otro Expanded.
+    // CustomScrollView con SliverList.builder: Flutter construye cada tarjeta
+    // solo cuando entra al viewport (lazy rendering). cacheExtent amplía la
+    // zona de precarga un poco más allá de lo visible para que el scroll
+    // sea fluido incluso con listas largas.
     return CustomScrollView(
+      // Precarga items equivalentes a ~2 pantallas fuera del viewport visible.
+      scrollCacheExtent: const ScrollCacheExtent.pixels(800),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-          sliver: SliverList.separated(
+          sliver: SliverList.builder(
             itemCount: habits.length,
-            separatorBuilder: (context, _) => const SizedBox(height: 12),
             itemBuilder: (context, i) {
               final habit = habits[i];
-              return SimpleHabitCard(
-                data: SimpleHabitData(
-                  title: habit.name,
-                  progressLabel:
-                      '${habit.goalPerDay} ${habit.goalPerDay == 1 ? 'vez' : 'veces'} al día',
-                  iconData: habitIconFor(habit.iconIndex),
-                  iconColor: Color(habit.colorValue),
+              return Padding(
+                // Separador entre tarjetas sin necesidad de un sliver extra.
+                padding: EdgeInsets.only(bottom: i < habits.length - 1 ? 12 : 0),
+                child: SimpleHabitCard(
+                  data: SimpleHabitData(
+                    title: habit.name,
+                    progressLabel:
+                        '${habit.goalPerDay} ${habit.goalPerDay == 1 ? 'vez' : 'veces'} al día',
+                    iconData: habitIconFor(habit.iconIndex),
+                    iconColor: Color(habit.colorValue),
+                  ),
+                  onEdit: () => onEdit(habit),
+                  onDelete: onDelete == null ? null : () => onDelete!(habit),
+                  onMove: onMove == null ? null : () => onMove!(habit),
                 ),
-                onEdit: () => onEdit(habit),
-                onDelete: onDelete == null ? null : () => onDelete!(habit),
-                onMove: onMove == null ? null : () => onMove!(habit),
               );
             },
           ),

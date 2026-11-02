@@ -30,7 +30,6 @@ class SupabaseHomeDataSource implements HomeDataSource {
     return _request('No se pudo cargar tu progreso de hoy', () async {
       _requireSession();
 
-      // Las políticas de la tabla ya limitan los registros a los del usuario.
       final rows = await _client
           .from('habit_logs')
           .select()
@@ -72,11 +71,8 @@ class SupabaseHomeDataSource implements HomeDataSource {
     return user.id;
   }
 
-  /// Sin sesión no tiene sentido consultar.
   void _requireSession() => _userId;
 
-  /// Ejecuta una consulta y cambia los errores de Supabase o de red por un
-  /// [HomeDataException] con un mensaje que se le puede mostrar al usuario.
   Future<T> _request<T>(String errorMessage, Future<T> Function() query) async {
     try {
       return await query();
@@ -86,7 +82,6 @@ class SupabaseHomeDataSource implements HomeDataSource {
     } on NotSignedInException {
       rethrow;
     } on TypeError catch (e) {
-      // Llegó una fila con un dato que el modelo no esperaba.
       debugPrint('Dato inesperado de Supabase: $e');
       throw HomeDataException(errorMessage);
     } catch (e) {

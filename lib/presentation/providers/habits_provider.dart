@@ -1,44 +1,174 @@
 import 'package:flutter/foundation.dart';
- 
+
 import '../../data/datasources/habit_data_source.dart';
 import '../../data/models/habit.dart';
 import '../../data/repositories/habit_repository.dart';
- 
+
+// ── Enums de filtro ────────────────────────────────────────────────────────
+
+/// Período de tiempo para filtrar la lista de hábitos.
+enum HabitPeriodFilter { today, week, all }
+
+/// Filtro combinado de tipo y categoría.
+enum HabitChipFilter {
+  all,
+  frequent,
+  fleeting,
+  health,
+  home,
+  university,
+}
+
+// ── Provider ───────────────────────────────────────────────────────────────
+
 class HabitsProvider extends ChangeNotifier {
   HabitsProvider(this._repository);
- 
+
   final HabitRepository _repository;
- 
+
   List<Habit> _habits = [];
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Filtros activos — la pantalla los cambia; el provider recalcula la vista.
+  HabitPeriodFilter _periodFilter = HabitPeriodFilter.all;
+  HabitChipFilter _chipFilter = HabitChipFilter.all;
+
+  // ── Getters básicos ──────────────────────────────────────────────────────
+
   List<Habit> get habits => List.unmodifiable(_habits);
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  
+
+  HabitPeriodFilter get periodFilter => _periodFilter;
+  HabitChipFilter get chipFilter => _chipFilter;
+
   List<Habit> get frequentHabits =>
       _habits.where((h) => h.type == HabitType.frecuente).toList();
- 
+
   List<Habit> get fleetingHabits =>
       _habits.where((h) => h.type == HabitType.fugaz).toList();
- 
-  /// Busca un hábito por id. Devuelve null si no lo encuentra, en vez de
-  /// lanzar un error, porque la pantalla de editar puede abrirse con un
-  /// hábito que alguien ya borró
+
+  // ── Getter de lista filtrada ─────────────────────────────────────────────
+
+  /// Lista de hábitos aplicando [periodFilter] y [chipFilter].
+  /// Se recalcula solo cuando cambia _habits o algún filtro.
+  List<Habit> get filteredHabits {
+    final byPeriod = _applyPeriodFilter(_habits);
+    return _applyChipFilter(byPeriod);
+  }
+
+  // ── Cambio de filtros ────────────────────────────────────────────────────
+
+  void setPeriodFilter(HabitPeriodFilter filter) {
+    if (_periodFilter == filter) return;
+    _periodFilter = filter;
+    notifyListeners();
+  }
+
+  void setChipFilter(HabitChipFilter filter) {
+    if (_chipFilter == filter) return;
+    _chipFilter = filter;
+    notifyListeners();
+  }
+
+  // ── Lógica de filtrado ───────────────────────────────────────────────────
+
+  List<Habit> _applyPeriodFilter(List<Habit> all) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return switch (_periodFilter) {
+      HabitPeriodFilter.today => all.where((h) {
+          final created = DateTime(
+            h.createdAt.year,
+            h.createdAt.month,
+            h.createdAt.day,
+          );
+          if (h.type == HabitType.fugaz) return created == today;
+          return _isScheduledToday(h, today);
+        }).toList(),
+
+      HabitPeriodFilter.week => all.where((h) {
+          final weekStart =
+              today.subtract(Duration(days: today.weekday - 1));
+          final weekEnd = weekStart.add(const Duration(days: 6));
+          final created = DateTime(
+            h.createdAt.year,
+            h.createdAt.month,
+            h.createdAt.day,
+          );
+          if (!created.isBefore(weekStart) && !created.isAfter(weekEnd)) {
+            return true;
+          }
+          if (h.type == HabitType.fugaz) return false;
+          return _hasOccurrenceInWeek(h, weekStart);
+        }).toList(),
+
+      HabitPeriodFilter.all => all,
+    };
+  }
+
+  List<Habit> _applyChipFilter(List<Habit> all) {
+    return switch (_chipFilter) {
+      HabitChipFilter.frequent =>
+        all.where((h) => h.type == HabitType.frecuente).toList(),
+      HabitChipFilter.fleeting =>
+        all.where((h) => h.type == HabitType.fugaz).toList(),
+      HabitChipFilter.health =>
+        all.where((h) => h.category == HabitCategory.salud).toList(),
+      HabitChipFilter.home =>
+        all.where((h) => h.category == HabitCategory.hogar).toList(),
+      HabitChipFilter.university =>
+        all.where((h) => h.category == HabitCategory.universidad).toList(),
+      HabitChipFilter.all => all,
+    };
+  }
+
+  /// Si un hábito frecuente aplica para [today] según su repetición.
+  static bool _isScheduledToday(Habit habit, DateTime today) {
+    if (habit.type != HabitType.frecuente || habit.repeat == null) {
+      return false;
+    }
+    return switch (habit.repeat!) {
+      HabitRepeat.diariamente => true,
+      HabitRepeat.semanalmente => habit.days.contains(today.weekday),
+      HabitRepeat.mensualmente => habit.days.contains(today.day),
+    };
+  }
+
+  /// Si un hábito frecuente tiene al menos una ocurrencia en la semana
+  /// que comienza en [weekStart] (lunes).
+  static bool _hasOccurrenceInWeek(Habit habit, DateTime weekStart) {
+    if (habit.repeat == null) return false;
+    return switch (habit.repeat!) {
+      HabitRepeat.diariamente => true,
+      HabitRepeat.semanalmente => habit.days.isNotEmpty,
+      HabitRepeat.mensualmente => habit.days.any((day) {
+          for (var i = 0; i < 7; i++) {
+            if (weekStart.add(Duration(days: i)).day == day) return true;
+          }
+          return false;
+        }),
+    };
+  }
+
+  // ── Operaciones sobre hábitos ────────────────────────────────────────────
+
+  /// Busca un hábito por id. Devuelve null si no lo encuentra.
   Habit? findById(String id) {
     for (final habit in _habits) {
       if (habit.id == id) return habit;
     }
     return null;
   }
- 
-  /// Carga los hábitos desde el repository. Se llama una vez al iniciar la app
+
+  /// Carga los hábitos desde el repository. Se llama una vez al iniciar la app.
   Future<void> loadHabits() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
- 
+
     try {
       _habits = await _repository.getHabits();
     } catch (e) {
@@ -49,13 +179,12 @@ class HabitsProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
- 
-  /// Guarda un hábito nuevo. Devuelve true si salió bien, para que la
-  /// pantalla sepa si mostrar:
+
+  /// Guarda un hábito nuevo. Devuelve true si salió bien.
   Future<bool> addHabit(Habit habit) async {
     try {
       final saved = await _repository.createHabit(habit);
-      // Lo ponemos al inicio para respetar el orden del mas reciente
+      // Al inicio para respetar el orden del más reciente.
       _habits = [saved, ..._habits];
       _errorMessage = null;
       notifyListeners();
@@ -67,7 +196,7 @@ class HabitsProvider extends ChangeNotifier {
       return false;
     }
   }
- 
+
   /// Reemplaza un hábito editado. Devuelve true si salió bien.
   Future<bool> updateHabit(Habit habit) async {
     try {
@@ -89,11 +218,11 @@ class HabitsProvider extends ChangeNotifier {
       return false;
     }
   }
- 
-  /// Cambia el orden de un hábito dentro de su lista cuando el usuario lo arrastra.
-  /// oldIndex y newIndex son posiciones dentro de esa lista filtrada, no
-  /// dentro de _habits; por eso los hábitos del otro tipo se quedan
-  /// donde estaban.
+
+  /// Cambia el orden de un hábito dentro de su tipo.
+  ///
+  /// [oldIndex] y [newIndex] son posiciones dentro de la lista filtrada
+  /// por tipo, no dentro de [_habits]; los hábitos del otro tipo no se mueven.
   void reorderHabits(HabitType type, int oldIndex, int newIndex) {
     final sameType = _habits.where((h) => h.type == type).toList();
     if (oldIndex == newIndex ||
@@ -103,20 +232,18 @@ class HabitsProvider extends ChangeNotifier {
         newIndex >= sameType.length) {
       return;
     }
- 
+
     final moved = sameType.removeAt(oldIndex);
     sameType.insert(newIndex, moved);
- 
-    // cada vez que aparece un hábito
-    // de este tipo, ponemos el siguiente de la lista ya ordenada
+
     var next = 0;
     _habits = [
       for (final h in _habits) h.type == type ? sameType[next++] : h,
     ];
     notifyListeners();
   }
- 
-  /// Borra un hábito. Da true si salió bien
+
+  /// Borra un hábito. Devuelve true si salió bien.
   Future<bool> deleteHabit(String id) async {
     try {
       await _repository.deleteHabit(id);

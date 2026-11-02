@@ -65,10 +65,17 @@ class HomeProvider extends ChangeNotifier {
       final log = photo == null
           ? await _repository.markDone(habitId, today)
           : await _repository.markDoneWithPhoto(habitId, today, photo);
+
+      // Actualiza la lista en memoria con el nuevo log.
       _habits = [
         for (final h in _habits)
           h.habit.id == habitId ? TodayHabit(habit: h.habit, log: log) : h,
       ];
+
+      // Ahora que la lista ya refleja el log nuevo, comprueba si el día
+      // quedó completamente done para actualizar daily_summaries.
+      _repository.checkAndMarkDayComplete(today, _habits);
+
       notifyListeners();
       return null;
     } on NotSignedInException {

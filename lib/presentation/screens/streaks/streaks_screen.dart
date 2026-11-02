@@ -31,8 +31,7 @@ class _StreakScreenState extends State<StreakScreen> {
   Widget build(BuildContext context) {
     final streaks = context.watch<StreaksProvider>();
     final trophies = context.watch<TrophiesProvider>();
-    final frogAwake = context.watch<HomeProvider>().frogAwake ||
-        streaks.currentStreak > 0;
+    final frogAwake = context.watch<HomeProvider>().frogAwake;
 
     if (streaks.isLoading) {
       return const Center(

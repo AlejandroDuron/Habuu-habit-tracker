@@ -14,49 +14,59 @@ import 'habits_screen.dart';
 
 const _periods = ['Hoy', 'Semana', 'Todo'];
 
-/// Chips de filtrado en una sola fila:
-/// [0] Todo · [1] Frecuente · [2] Fugaz · [3] Salud · [4] Hogar · [5] Universidad
+/// Mapeo de índice de segmento → [HabitPeriodFilter].
+const _periodFilters = [
+  HabitPeriodFilter.today,
+  HabitPeriodFilter.week,
+  HabitPeriodFilter.all,
+];
+
+/// Etiquetas de chips de filtro.
 const _chips = ['Todo', 'Frecuente', 'Fugaz', 'Salud', 'Hogar', 'Universidad'];
 
+/// Mapeo de índice de chip → [HabitChipFilter].
+const _chipFilters = [
+  HabitChipFilter.all,
+  HabitChipFilter.frequent,
+  HabitChipFilter.fleeting,
+  HabitChipFilter.health,
+  HabitChipFilter.home,
+  HabitChipFilter.university,
+];
+
 /// Pantalla "Tus Hábitos": lista filtrable por período, tipo y categoría.
-class HabitsListScreen extends StatefulWidget {
+///
+/// La lógica de filtrado vive en [HabitsProvider.filteredHabits].
+/// Esta pantalla solo refleja y comunica los cambios de filtro.
+class HabitsListScreen extends StatelessWidget {
   const HabitsListScreen({super.key});
-
-  @override
-  State<HabitsListScreen> createState() => _HabitsListScreenState();
-}
-
-class _HabitsListScreenState extends State<HabitsListScreen> {
-  int _periodIndex = 0;
-
-  /// Índice del chip activo (ver constante [_chips]).
-  int _chipIndex = 0;
 
   // ── Navegación ────────────────────────────────────────────────────────────
 
-  void _openEdit(Habit habit) {
+  void _openEdit(BuildContext context, Habit habit) {
     Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(builder: (_) => HabitFormScreen(habit: habit)),
     );
   }
 
-  void _openNew() {
+  void _openNew(BuildContext context) {
     Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(builder: (_) => const HabitFormScreen()),
     );
   }
 
-  void _openAllHabits() {
+  void _openAllHabits(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => HabitsScreen(onBack: () => Navigator.of(context).pop()),
+        builder: (_) =>
+            HabitsScreen(onBack: () => Navigator.of(context).pop()),
       ),
     );
   }
 
   // ── Acciones de tarjeta ───────────────────────────────────────────────────
 
-  Future<void> _deleteHabit(Habit habit) async {
+  Future<void> _deleteHabit(BuildContext context, Habit habit) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -77,11 +87,11 @@ class _HabitsListScreenState extends State<HabitsListScreen> {
       ),
     );
 
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !context.mounted) return;
 
     final provider = context.read<HabitsProvider>();
     final ok = await provider.deleteHabit(habit.id);
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -92,16 +102,15 @@ class _HabitsListScreenState extends State<HabitsListScreen> {
     );
   }
 
-  Future<void> _moveHabit(Habit habit) async {
+  Future<void> _moveHabit(BuildContext context, Habit habit) async {
     final provider = context.read<HabitsProvider>();
     final habits = provider.habits;
     final currentIndex = habits.indexWhere((h) => h.id == habit.id);
     if (currentIndex == -1) return;
 
-    final positions =
-        List.generate(habits.length, (i) => i)
-            .where((i) => i != currentIndex)
-            .toList();
+    final positions = List.generate(habits.length, (i) => i)
+        .where((i) => i != currentIndex)
+        .toList();
 
     if (positions.isEmpty) return;
 
@@ -158,28 +167,21 @@ class _HabitsListScreenState extends State<HabitsListScreen> {
       ),
     );
 
-    if (targetIndex == null || !mounted) return;
+    if (targetIndex == null || !context.mounted) return;
     provider.reorderHabits(habit.type, currentIndex, targetIndex);
-  }
-
-  // ── Filtrado ───────────────────────────────────────────────────────────────
-
-  List<Habit> _filtered(List<Habit> all) {
-    return switch (_chipIndex) {
-      1 => all.where((h) => h.type == HabitType.frecuente).toList(),
-      2 => all.where((h) => h.type == HabitType.fugaz).toList(),
-      3 => all.where((h) => h.category == HabitCategory.salud).toList(),
-      4 => all.where((h) => h.category == HabitCategory.hogar).toList(),
-      5 => all.where((h) => h.category == HabitCategory.universidad).toList(),
-      _ => all, // 0 = Todo
-    };
   }
 
   // ── UI ─────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    // Leemos el provider una sola vez por build; los cambios de filtro
+    // llaman a notifyListeners() que dispara un rebuild automático.
     final provider = context.watch<HabitsProvider>();
+
+    // Índices actuales para los widgets de filtro.
+    final periodIndex = _periodFilters.indexOf(provider.periodFilter);
+    final chipIndex = _chipFilters.indexOf(provider.chipFilter);
 
     return Scaffold(
       body: DecoratedBox(
@@ -191,38 +193,45 @@ class _HabitsListScreenState extends State<HabitsListScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                child: HabitsListHeader(onMore: _openAllHabits),
+                child: HabitsListHeader(
+                  onMore: () => _openAllHabits(context),
+                ),
               ),
               const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: PeriodSegment(
                   labels: _periods,
-                  selected: _periodIndex,
-                  onChanged: (i) => setState(() => _periodIndex = i),
+                  selected: periodIndex < 0 ? 0 : periodIndex,
+                  onChanged: (i) =>
+                      provider.setPeriodFilter(_periodFilters[i]),
                 ),
               ),
               const SizedBox(height: 16),
               CategoryChips(
                 categories: _chips,
-                selected: _chipIndex,
-                onChanged: (i) => setState(() => _chipIndex = i),
+                selected: chipIndex < 0 ? 0 : chipIndex,
+                onChanged: (i) => provider.setChipFilter(_chipFilters[i]),
               ),
               const SizedBox(height: 20),
+              // Expanded + HabitsListView (CustomScrollView con SliverList):
+              // Flutter construye cada tarjeta solo cuando entra en pantalla.
               Expanded(
                 child: HabitsListView(
-                  habits: _filtered(provider.habits),
+                  habits: provider.filteredHabits,
                   isLoading: provider.isLoading,
-                  onEdit: _openEdit,
-                  onDelete: _deleteHabit,
-                  onMove: _moveHabit,
+                  onEdit: (habit) => _openEdit(context, habit),
+                  onDelete: (habit) => _deleteHabit(context, habit),
+                  onMove: (habit) => _moveHabit(context, habit),
                 ),
               ),
             ],
           ),
         ),
       ),
-      floatingActionButton: AddHabitFab(onPressed: _openNew),
+      floatingActionButton: AddHabitFab(
+        onPressed: () => _openNew(context),
+      ),
     );
   }
 }
