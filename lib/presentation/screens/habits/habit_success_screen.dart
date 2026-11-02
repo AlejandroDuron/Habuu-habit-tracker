@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
- 
+import '../../../config/assets.dart';
 import '../../../config/theme/tokens.dart';
  
 class HabitSuccessScreen extends StatelessWidget {
@@ -22,7 +22,7 @@ class HabitSuccessScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image.asset(
-                    'assets/images/auth/frog happy.png',
+                    AuthAssets.frogHappy,
                     width: 121,
                     height: 98,
                     fit: BoxFit.contain,
