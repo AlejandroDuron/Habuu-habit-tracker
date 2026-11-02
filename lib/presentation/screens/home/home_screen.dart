@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../config/theme/tokens.dart';
 import '../../models/home/habit_card_data.dart';
 import '../../providers/home_provider.dart';
+import '../../widgets/home/evidence_panel.dart';
 import '../../widgets/home/habit_section.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/home/today_card.dart';
@@ -18,6 +20,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  /// Hábito con el panel de la foto abierto. Solo puede haber uno.
+  String? _expandedHabitId;
+
   @override
   void initState() {
     super.initState();
@@ -27,11 +32,27 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _markDone(HabitCardData card) async {
-    final error = await context.read<HomeProvider>().markDone(card.habitId);
-    if (error == null || !mounted) return;
+  /// Abre el panel de la foto de ese hábito, o lo cierra si ya estaba abierto.
+  void _togglePanel(HabitCardData card) {
+    setState(() {
+      _expandedHabitId = _expandedHabitId == card.habitId ? null : card.habitId;
+    });
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+  /// Marca el hábito como cumplido, con foto o sin ella, y cierra el panel.
+  Future<void> _complete(HabitCardData card, {Uint8List? photo}) async {
+    final error = await context.read<HomeProvider>().markDone(
+      card.habitId,
+      photo: photo,
+    );
+    if (!mounted) return;
+
+    if (error == null) {
+      setState(() => _expandedHabitId = null);
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
+    }
   }
 
   @override
@@ -61,7 +82,15 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 23),
                 TodayCard(days: HomeMockData.days, frogAwake: home.frogAwake),
                 const SizedBox(height: 23),
-                _HabitsContent(home: home, onDone: _markDone),
+                _HabitsContent(
+                  home: home,
+                  onDone: _togglePanel,
+                  expandedHabitId: _expandedHabitId,
+                  panelBuilder: (card) => EvidencePanel(
+                    onSave: (photo) => _complete(card, photo: photo),
+                    onSkip: () => _complete(card),
+                  ),
+                ),
               ],
             ),
           ),
@@ -73,10 +102,17 @@ class _HomePageState extends State<HomePage> {
 
 /// La sección de hábitos según cómo va la carga.
 class _HabitsContent extends StatelessWidget {
-  const _HabitsContent({required this.home, required this.onDone});
+  const _HabitsContent({
+    required this.home,
+    required this.onDone,
+    required this.expandedHabitId,
+    required this.panelBuilder,
+  });
 
   final HomeProvider home;
   final ValueChanged<HabitCardData> onDone;
+  final String? expandedHabitId;
+  final Widget Function(HabitCardData card) panelBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +136,8 @@ class _HabitsContent extends StatelessWidget {
         title: 'Hábitos',
         items: home.habits.map(HabitCardData.fromTodayHabit).toList(),
         onDone: onDone,
+        expandedHabitId: expandedHabitId,
+        expandedBuilder: panelBuilder,
       ),
     };
   }

@@ -9,12 +9,23 @@ import 'habit_loader.dart';
 
 /// Tarjeta de un hábito: ícono, título, meta y el botón de completar.
 class HabitCard extends StatelessWidget {
-  const HabitCard({super.key, required this.data, this.onDone});
+  const HabitCard({
+    super.key,
+    required this.data,
+    this.onDone,
+    this.expanded = false,
+  });
 
   final HabitCardData data;
 
   /// Se llama al tocar el botón de completar mientras sigue pendiente.
   final VoidCallback? onDone;
+
+  /// Si tiene un panel abierto debajo. Las esquinas de abajo quedan rectas
+  /// para que la tarjeta y el panel se vean como una sola pieza.
+  final bool expanded;
+
+  static const _radius = Radius.circular(12);
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +33,9 @@ class HabitCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: HabuuColors.white100,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: expanded
+            ? const BorderRadius.vertical(top: _radius)
+            : const BorderRadius.all(_radius),
         boxShadow: const [habuuCardShadow],
       ),
       child: Row(
@@ -51,18 +64,27 @@ class _TitleAndSubtitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Una línea para cada texto, así todas las tarjetas miden lo mismo
+    // aunque el nombre o la meta sean largos.
     return SizedBox(
       height: 36,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(data.title, style: HabuuText.bodySmSemibold),
+          Text(
+            data.title,
+            style: HabuuText.bodySmSemibold,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           Text(
             data.subtitle,
             style: HabuuText.captionSmMedium.copyWith(
               color: HabuuColors.black60,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

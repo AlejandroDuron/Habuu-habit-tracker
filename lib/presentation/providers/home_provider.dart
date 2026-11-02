@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../data/datasources/home_data_source.dart';
 import '../../data/models/today_habit.dart';
 import '../../data/repositories/home_repository.dart';
+import '../../services/photo_compressor.dart';
 
 /// En qué punto está la carga del Home.
 enum HomeStatus { loading, ready, error, signedOut }
@@ -54,17 +55,16 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
-  /// Marca un hábito como cumplido hoy. Devuelve null si salió bien, o el
-  /// mensaje de error para mostrarlo.
-  Future<String?> markDone(String habitId, {String? evidencePath}) async {
+  /// Marca un hábito como cumplido hoy, con [photo] como evidencia si viene.
+  /// Devuelve null si salió bien, o el mensaje de error para mostrarlo.
+  Future<String?> markDone(String habitId, {Uint8List? photo}) async {
     if (!_saving.add(habitId)) return null;
 
     try {
-      final log = await _repository.markDone(
-        habitId,
-        _clock(),
-        evidencePath: evidencePath,
-      );
+      final today = _clock();
+      final log = photo == null
+          ? await _repository.markDone(habitId, today)
+          : await _repository.markDoneWithPhoto(habitId, today, photo);
       _habits = [
         for (final h in _habits)
           h.habit.id == habitId ? TodayHabit(habit: h.habit, log: log) : h,
@@ -74,6 +74,8 @@ class HomeProvider extends ChangeNotifier {
     } on NotSignedInException {
       return 'Inicia sesión para guardar tu progreso';
     } on HomeDataException catch (e) {
+      return e.message;
+    } on PhotoCompressionException catch (e) {
       return e.message;
     } catch (e) {
       debugPrint('Error inesperado al marcar un hábito: $e');

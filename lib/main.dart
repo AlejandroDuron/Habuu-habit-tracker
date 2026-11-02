@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+
 import '/config/routes.dart'; // AUTH
 import '/data/datasources/in_memory_habit_data_source.dart';
+import '/data/datasources/supabase_evidence_data_source.dart';
 import '/data/datasources/supabase_home_data_source.dart';
 import '/data/repositories/habit_repository.dart';
 import '/data/repositories/home_repository.dart';
@@ -12,10 +14,10 @@ import '/presentation/providers/habits_provider.dart';
 import '/presentation/providers/home_provider.dart';
 import '/presentation/screens/landing/landing_screen.dart';
 import '/utils/dev_session.dart';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final GlobalKey<NavigatorState> _navigatorKey =
-    GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,13 +40,16 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => HabitsProvider(
-            HabitRepository(InMemoryHabitDataSource()),
-          )..loadHabits(),
+          create: (_) =>
+              HabitsProvider(HabitRepository(InMemoryHabitDataSource()))
+                ..loadHabits(),
         ),
         ChangeNotifierProvider(
           create: (_) => HomeProvider(
-            HomeRepository(SupabaseHomeDataSource(Supabase.instance.client)),
+            HomeRepository(
+              SupabaseHomeDataSource(Supabase.instance.client),
+              SupabaseEvidenceDataSource(Supabase.instance.client),
+            ),
           ),
         ),
         ChangeNotifierProvider(create: (_) => AuthProvider()),

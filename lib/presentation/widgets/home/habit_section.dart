@@ -11,6 +11,8 @@ class HabitSection extends StatelessWidget {
     required this.title,
     required this.items,
     this.onDone,
+    this.expandedHabitId,
+    this.expandedBuilder,
     this.headerGap = 4,
     this.itemGap = 16,
   });
@@ -20,6 +22,12 @@ class HabitSection extends StatelessWidget {
 
   /// Se llama con la tarjeta cuyo botón de completar se tocó.
   final ValueChanged<HabitCardData>? onDone;
+
+  /// Hábito que tiene su panel abierto, si hay alguno.
+  final String? expandedHabitId;
+
+  /// Arma el panel que se muestra debajo de la tarjeta abierta.
+  final Widget Function(HabitCardData card)? expandedBuilder;
 
   /// Espacio entre el título y la primera tarjeta.
   final double headerGap;
@@ -36,12 +44,29 @@ class HabitSection extends StatelessWidget {
         SizedBox(height: headerGap),
         for (var i = 0; i < items.length; i++) ...[
           if (i > 0) SizedBox(height: itemGap),
-          HabitCard(
-            key: ValueKey(items[i].habitId),
-            data: items[i],
-            onDone: onDone == null ? null : () => onDone!(items[i]),
-          ),
+          _buildItem(items[i]),
         ],
+      ],
+    );
+  }
+
+  Widget _buildItem(HabitCardData card) {
+    final expanded = card.habitId == expandedHabitId && expandedBuilder != null;
+
+    return Column(
+      key: ValueKey(card.habitId),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HabitCard(
+          data: card,
+          expanded: expanded,
+          onDone: onDone == null ? null : () => onDone!(card),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+          child: expanded ? expandedBuilder!(card) : const SizedBox.shrink(),
+        ),
       ],
     );
   }
