@@ -14,7 +14,7 @@ class InMemoryHabitDataSource implements HabitDataSource {
       colorValue: 0xFF13533A,
       repeat: HabitRepeat.diariamente,
       goalPerDay: 8,
-      reminderTime: HabitReminderTime.manana,
+      reminderTime: (hour: 8, minute: 0),
       createdAt: DateTime(2026, 1, 1),
     ),
   ];

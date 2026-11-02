@@ -5,10 +5,12 @@ import 'package:provider/provider.dart';
 import '../../../config/theme/tokens.dart';
 import '../../models/home/habit_card_data.dart';
 import '../../providers/home_provider.dart';
+import '../../providers/trophies_provider.dart';
 import '../../widgets/home/evidence_panel.dart';
 import '../../widgets/home/habit_section.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/home/today_card.dart';
+import '../../widgets/thophies/trophy_earned_toast.dart';
 import '../habits/habits_screen.dart';
 import 'home_mock_data.dart';
 
@@ -67,44 +69,57 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final home = context.watch<HomeProvider>();
+    final trophies = context.watch<TrophiesProvider>();
 
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [HabuuColors.primary50, HabuuColors.success200],
-            stops: [0.21635, 1.0],
-          ),
-        ),
-        child: RefreshIndicator(
-          onRefresh: home.load,
-          // El contenido termina antes de la navbar y no se ve detrás de ella.
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(35, 76, 35, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const HomeHeader(),
-                const SizedBox(height: 23),
-                TodayCard(days: HomeMockData.days, frogAwake: home.frogAwake),
-                const SizedBox(height: 23),
-                _HabitsContent(
-                  home: home,
-                  onDone: _togglePanel,
-                  onShowMore: _openAllHabits,
-                  expandedHabitId: _expandedHabitId,
-                  panelBuilder: (card) => EvidencePanel(
-                    onSave: (photo) => _complete(card, photo: photo),
-                    onSkip: () => _complete(card),
-                  ),
+      body: Stack(
+        children: [
+          DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [HabuuColors.primary50, HabuuColors.success200],
+                stops: [0.21635, 1.0],
+              ),
+            ),
+            child: RefreshIndicator(
+              onRefresh: home.load,
+              // El contenido termina antes de la navbar y no se ve detrás de ella.
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(35, 76, 35, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const HomeHeader(),
+                    const SizedBox(height: 23),
+                    TodayCard(days: HomeMockData.days, frogAwake: home.frogAwake),
+                    const SizedBox(height: 23),
+                    _HabitsContent(
+                      home: home,
+                      onDone: _togglePanel,
+                      onShowMore: _openAllHabits,
+                      expandedHabitId: _expandedHabitId,
+                      panelBuilder: (card) => EvidencePanel(
+                        onSave: (photo) => _complete(card, photo: photo),
+                        onSkip: () => _complete(card),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+
+          // Toast de trofeo ganado (se muestra encima de todo)
+          if (trophies.newlyEarned.isNotEmpty)
+            TrophyEarnedToast(
+              key: ValueKey(trophies.newlyEarned.first.earnedAt),
+              trophy: trophies.newlyEarned.first,
+              onDismissed: () => trophies.clearNewlyEarned(),
+            ),
+        ],
       ),
     );
   }

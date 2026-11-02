@@ -30,6 +30,7 @@ class HomeHabit {
     this.daysOfWeek = const {},
     this.dayOfMonth,
     this.goal,
+    this.allowSkip = false,
   }) : assert(name.trim().isNotEmpty, 'El nombre no puede ir vacío'),
        assert(
          daysOfWeek.every((d) => d >= DateTime.monday && d <= DateTime.sunday),
@@ -42,29 +43,17 @@ class HomeHabit {
 
   final String id;
   final String name;
-
-  /// Clave del ícono elegido, por ejemplo "water".
   final String iconKey;
-
-  /// Color en hexadecimal, por ejemplo "#FFC654".
   final String? color;
-
   final HomeHabitType type;
-
-  /// Solo los hábitos recurrentes tienen frecuencia.
   final HabitFrequency? frequency;
-
-  /// Días en que toca un hábito semanal, de 1 (lunes) a 7 (domingo).
   final Set<int> daysOfWeek;
-
-  /// Día en que toca un hábito mensual.
   final int? dayOfMonth;
-
-  /// La meta como la escribió el usuario, por ejemplo "2 litros al día".
   final String? goal;
-
-  /// Día en que se creó. Un hábito de un solo día aparece solo esa fecha.
   final DateTime createdDate;
+
+  /// Si el usuario puede omitir este hábito en lugar de completarlo.
+  final bool allowSkip;
 
   factory HomeHabit.fromMap(Map<String, dynamic> map) {
     final frequency = map['frequency'] as String?;
@@ -83,6 +72,7 @@ class HomeHabit {
       dayOfMonth: (map['day_of_month'] as num?)?.toInt(),
       goal: map['goal'] as String?,
       createdDate: dateOnly(DateTime.parse(map['created_date'] as String)),
+      allowSkip: (map['allow_skip'] as bool?) ?? false,
     );
   }
 }

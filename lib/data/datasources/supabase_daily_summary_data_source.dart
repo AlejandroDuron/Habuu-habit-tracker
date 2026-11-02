@@ -55,6 +55,30 @@ class SupabaseDailySummaryDataSource implements DailySummaryDataSource {
     }
   }
 
+  @override
+  Future<int> getTotalCompletedDays() async {
+    try {
+      // Cuenta todas las filas con all_done = true del usuario.
+      final rows = await _client
+          .from('daily_summaries')
+          .select('summary_date')
+          .eq('user_id', _userId)
+          .eq('all_done', true);
+
+      return rows.length;
+    } on PostgrestException catch (e) {
+      debugPrint(
+          'Supabase error al contar días completados ${e.code}: ${e.message}');
+      throw const DailySummaryException(
+          'No se pudo contar el total de días completados');
+    } catch (e) {
+      debugPrint('Error de conexión (daily_summaries total): $e');
+      throw const DailySummaryException(
+        'Revisa tu conexión e inténtalo de nuevo',
+      );
+    }
+  }
+
   String get _userId {
     final user = _client.auth.currentUser;
     if (user == null) throw Exception('No hay una sesión iniciada');

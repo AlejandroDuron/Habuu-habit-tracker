@@ -43,6 +43,49 @@ class SupabaseTrophyDataSource implements TrophyDataSource {
     });
   }
 
+  @override
+  Future<EarnedTrophy?> awardTrophy(String trophyId) {
+    return _request('No se pudo otorgar el trofeo', () async {
+      final userId = _userId;
+
+      // Verifica si ya lo tiene para no duplicar.
+      final existing = await _client
+          .from('trophies_per_user')
+          .select('earned_at')
+          .eq('user_id', userId)
+          .eq('trophy_id', trophyId)
+          .maybeSingle();
+
+      if (existing != null) return null;
+
+      // Inserta el registro de trofeo ganado.
+      await _client.from('trophies_per_user').insert({
+        'user_id': userId,
+        'trophy_id': trophyId,
+        'earned_at': DateTime.now().toIso8601String(),
+      });
+
+      // Recupera la info completa del trofeo para devolver el EarnedTrophy.
+      final trophyRow = await _client
+          .from('trophies')
+          .select()
+          .eq('trophy_id', trophyId)
+          .single();
+
+      final earnedRow = await _client
+          .from('trophies_per_user')
+          .select('earned_at')
+          .eq('user_id', userId)
+          .eq('trophy_id', trophyId)
+          .single();
+
+      return EarnedTrophy.fromMap(
+        earnedRow,
+        Trophy.fromMap(trophyRow),
+      );
+    });
+  }
+
   String get _userId {
     final user = _client.auth.currentUser;
     if (user == null) throw Exception('No hay una sesión iniciada');

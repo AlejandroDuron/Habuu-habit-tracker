@@ -9,6 +9,15 @@ import '../models/habit_log.dart';
 import '../models/home_habit.dart';
 import '../models/today_habit.dart';
 
+/// Error al intentar omitir un hábito que no lo permite.
+class SkipNotAllowedException implements Exception {
+  const SkipNotAllowedException(this.habitName);
+  final String habitName;
+
+  @override
+  String toString() => '"$habitName" no permite ser omitido';
+}
+
 class HomeRepository {
   HomeRepository(
     this._dataSource,
@@ -73,6 +82,21 @@ class HomeRepository {
       await _deleteQuietly(path);
       rethrow;
     }
+  }
+
+  /// Marca un hábito como omitido en [day].
+  ///
+  /// Lanza [SkipNotAllowedException] si el hábito no permite ser omitido.
+  /// La validación ocurre en el cliente antes de ir a Supabase.
+  Future<HabitLog> markSkipped(TodayHabit todayHabit, DateTime day) async {
+    if (!todayHabit.habit.allowSkip) {
+      throw SkipNotAllowedException(todayHabit.habit.name);
+    }
+    return _dataSource.saveLog(
+      habitId: todayHabit.habit.id,
+      day: day,
+      status: LogStatus.skipped,
+    );
   }
 
   /// Verifica localmente (sin queries extra) si todos los hábitos del día

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../data/datasources/habit_data_source.dart';
 import '../../data/models/habit.dart';
 import '../../data/repositories/habit_repository.dart';
+import 'trophies_provider.dart';
 
 // ── Enums de filtro ────────────────────────────────────────────────────────
 
@@ -22,9 +23,18 @@ enum HabitChipFilter {
 // ── Provider ───────────────────────────────────────────────────────────────
 
 class HabitsProvider extends ChangeNotifier {
-  HabitsProvider(this._repository);
+  HabitsProvider(this._repository, {TrophiesProvider? trophies})
+      : _trophies = trophies;
 
   final HabitRepository _repository;
+
+  /// Permite inyectar el provider de trofeos para disparar evaluaciones.
+  TrophiesProvider? _trophies;
+
+  // ignore: use_setters_to_change_properties
+  void setTrophiesProvider(TrophiesProvider trophies) {
+    _trophies = trophies;
+  }
 
   List<Habit> _habits = [];
   bool _isLoading = false;
@@ -182,12 +192,37 @@ class HabitsProvider extends ChangeNotifier {
 
   /// Guarda un hábito nuevo. Devuelve true si salió bien.
   Future<bool> addHabit(Habit habit) async {
+    // Validación en cliente: nombre duplicado (case-insensitive).
+    final nameLower = habit.name.trim().toLowerCase();
+    final duplicate = _habits.any(
+      (h) => h.name.trim().toLowerCase() == nameLower,
+    );
+    if (duplicate) {
+      _errorMessage = 'Ya tienes un hábito con ese nombre';
+      notifyListeners();
+      return false;
+    }
+
     try {
       final saved = await _repository.createHabit(habit);
       // Al inicio para respetar el orden del más reciente.
       _habits = [saved, ..._habits];
       _errorMessage = null;
       notifyListeners();
+
+      // Trofeo por crear un nuevo hábito (se otorga solo la primera vez).
+      _trophies?.checkNewHabit().catchError(
+        (e) => debugPrint('Error al evaluar new_habits: $e'),
+      );
+
+      // Trofeo de un mes con Habuu: la fecha más antigua es la del hábito más viejo.
+      final oldest = _habits.reduce(
+        (a, b) => a.createdAt.isBefore(b.createdAt) ? a : b,
+      );
+      _trophies?.checkOneMonth(firstHabitDate: oldest.createdAt).catchError(
+        (e) => debugPrint('Error al evaluar one_month: $e'),
+      );
+
       return true;
     } catch (e) {
       _errorMessage = 'No se pudo crear el hábito';
@@ -199,6 +234,17 @@ class HabitsProvider extends ChangeNotifier {
 
   /// Reemplaza un hábito editado. Devuelve true si salió bien.
   Future<bool> updateHabit(Habit habit) async {
+    // Validación en cliente: nombre duplicado con otro hábito distinto.
+    final nameLower = habit.name.trim().toLowerCase();
+    final duplicate = _habits.any(
+      (h) => h.id != habit.id && h.name.trim().toLowerCase() == nameLower,
+    );
+    if (duplicate) {
+      _errorMessage = 'Ya tienes un hábito con ese nombre';
+      notifyListeners();
+      return false;
+    }
+
     try {
       final saved = await _repository.updateHabit(habit);
       _habits = [

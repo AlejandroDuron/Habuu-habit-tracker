@@ -22,6 +22,12 @@ import '/presentation/providers/trophies_provider.dart';
 ///
 /// Separar esto de [main] mantiene el archivo de entrada limpio y
 /// facilita intercambiar datasources reales por fakes en tests.
+///
+/// Orden de registro:
+///  1. TrophiesProvider (sin dependencias)
+///  2. HabitsProvider   (depende de TrophiesProvider)
+///  3. StreaksProvider   (depende de TrophiesProvider)
+///  4. HomeProvider      (depende de TrophiesProvider + StreaksProvider)
 class AppProviders extends StatelessWidget {
   const AppProviders({super.key, required this.child});
 
@@ -31,32 +37,64 @@ class AppProviders extends StatelessWidget {
   Widget build(BuildContext context) {
     final supabase = Supabase.instance.client;
 
+    final dailySummaryDs = SupabaseDailySummaryDataSource(supabase);
+    final trophyDs = SupabaseTrophyDataSource(supabase);
+
     return MultiProvider(
       providers: [
+        // ── TrophiesProvider (primero: los demás dependen de él) ──────────
         ChangeNotifierProvider(
+          create: (_) => TrophiesProvider(
+            TrophyRepository(
+              trophyDs,
+              dailySummary: dailySummaryDs,
+            ),
+          ),
+        ),
+
+        // ── HabitsProvider ────────────────────────────────────────────────
+        ChangeNotifierProxyProvider<TrophiesProvider, HabitsProvider>(
           create: (_) => HabitsProvider(
             HabitRepository(SupabaseHabitDataSource(supabase)),
           )..loadHabits(),
+          update: (_, trophies, habits) {
+            habits!.setTrophiesProvider(trophies);
+            return habits;
+          },
         ),
-        ChangeNotifierProvider(
+
+        // ── StreaksProvider ───────────────────────────────────────────────
+        ChangeNotifierProxyProvider<TrophiesProvider, StreaksProvider>(
+          create: (_) => StreaksProvider(
+            StreakRepository(SupabaseStreakDataSource(supabase)),
+          ),
+          update: (_, trophies, streaks) {
+            streaks!.setTrophiesProvider(trophies);
+            return streaks;
+          },
+        ),
+
+        // ── HomeProvider ──────────────────────────────────────────────────
+        // Depende de TrophiesProvider (day_completed, discipline, etc.)
+        // y de StreaksProvider (leer racha actual al evaluar streak_7/14).
+        ChangeNotifierProxyProvider2<TrophiesProvider, StreaksProvider,
+            HomeProvider>(
           create: (_) => HomeProvider(
             HomeRepository(
               SupabaseHomeDataSource(supabase),
               SupabaseEvidenceDataSource(supabase),
-              SupabaseDailySummaryDataSource(supabase),
+              dailySummaryDs,
             ),
           ),
+          update: (_, trophies, streaks, home) {
+            home!
+              ..setTrophiesProvider(trophies)
+              ..setStreaksProvider(streaks);
+            return home;
+          },
         ),
-        ChangeNotifierProvider(
-          create: (_) => StreaksProvider(
-            StreakRepository(SupabaseStreakDataSource(supabase)),
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => TrophiesProvider(
-            TrophyRepository(SupabaseTrophyDataSource(supabase)),
-          ),
-        ),
+
+        // ── AuthProvider ──────────────────────────────────────────────────
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: child,

@@ -209,7 +209,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
       repeat: freq.repeat,
       days: freq.days,
       allDay: false,
-      reminderTime: HabitReminderTime.manana,
+      reminderTime: null,
       goalPerDay: 1,
       allowSkip: (row['allow_skip'] as bool?) ?? false,
       remindersEnabled: true,

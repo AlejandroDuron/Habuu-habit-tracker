@@ -8,22 +8,30 @@ class HabitCategoryChips extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onChanged,
+    this.customCategories = const [],
     this.onAddNew,
   });
  
   final HabitCategory selected;
-  final ValueChanged<HabitCategory> onChanged;
-  /// Lo dejamos opcional porque crear categorías propias todavía no está
-  /// en el modelo; así el chip aparece solo cuando exista esa función
+
+  /// Categorías personalizadas creadas por el usuario (nombres).
+  /// Se muestran después de las predefinidas y se seleccionan por su label.
+  final List<String> customCategories;
+
+  final ValueChanged<String> onChanged;
+
+  /// Se llama cuando el usuario toca "Agregar Nueva".
+  /// La pantalla es responsable de mostrar el diálogo y registrar la categoría.
   final VoidCallback? onAddNew;
  
   static const double height = 40;
  
   @override
   Widget build(BuildContext context) {
-    const categories = HabitCategory.values;
+    final predefined = HabitCategory.values;
     final showAddNew = onAddNew != null;
-    final itemCount = categories.length + (showAddNew ? 1 : 0);
+    final itemCount =
+        predefined.length + customCategories.length + (showAddNew ? 1 : 0);
  
     return SizedBox(
       height: height,
@@ -32,25 +40,39 @@ class HabitCategoryChips extends StatelessWidget {
         itemCount: itemCount,
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
-          // El último lugar es para agergar una nueva, si existiera
-          if (index == categories.length) {
+          // El último lugar es para agregar una nueva categoría.
+          if (index == predefined.length + customCategories.length) {
             return _CategoryChip(
-              label: 'Agregar Nueva',
+              label: '＋ Agregar',
               isSelected: false,
               onTap: onAddNew!,
             );
           }
  
-          final category = categories[index];
+          // Primero las categorías predefinidas.
+          if (index < predefined.length) {
+            final category = predefined[index];
+            return _CategoryChip(
+              label: category.label,
+              isSelected: category.label == _selectedLabel,
+              onTap: () => onChanged(category.label),
+            );
+          }
+ 
+          // Luego las personalizadas.
+          final customLabel = customCategories[index - predefined.length];
           return _CategoryChip(
-            label: category.label,
-            isSelected: category == selected,
-            onTap: () => onChanged(category),
+            label: customLabel,
+            isSelected: customLabel == _selectedLabel,
+            onTap: () => onChanged(customLabel),
           );
         },
       ),
     );
   }
+
+  /// El label de la categoría seleccionada, comparando por label en string.
+  String get _selectedLabel => selected.label;
 }
  
 class _CategoryChip extends StatelessWidget {
@@ -68,8 +90,6 @@ class _CategoryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(HabuuRadius.lg);
  
-    // En Figma ningún chip aparece seleccionado, así que para que el usuario
-    // vea cuál eligió lo pintamos con el verde principal y texto blanco
     return Semantics(
       button: true,
       selected: isSelected,

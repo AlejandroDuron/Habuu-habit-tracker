@@ -10,8 +10,10 @@ import '../../widgets/habits/habit_category_chips.dart';
 import '../../widgets/habits/habit_color_picker.dart';
 import '../../widgets/habits/habit_day_picker.dart';
 import '../../widgets/habits/habit_icon_picker.dart';
+import '../../widgets/habits/habit_month_day_picker.dart';
 import '../../widgets/habits/habit_segmented_control.dart';
 import '../../widgets/habits/habit_switch_row.dart';
+import '../../widgets/habits/habit_time_picker.dart';
 import '../../widgets/habits/habit_type_toggle.dart';
 import 'habit_success_screen.dart';
  
@@ -24,14 +26,7 @@ class HabitFormScreen extends StatefulWidget {
   });
 
   final Habit? habit;
- 
-  /// Qué hacer con la flecha de regresar. Cuando la pantalla vive en la
-  /// pestaña "+" del navbar no hay nada atrás en el Navigator, así que el
-  /// shell nos dice qué hacer.
-  /// Si es null, usamos Navigator.maybePop.
   final VoidCallback? onBack;
- 
-  /// Se llama después de crear un hábito y cerrar el mensaje de éxito
   final VoidCallback? onSaved;
  
   @override
@@ -53,9 +48,12 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   late HabitRepeat _repeat;
   late Set<int> _days;
   late bool _allDay;
-  late HabitReminderTime _reminderTime;
+  late TimeOfDay? _reminderTime;
   late bool _allowSkip;
   late bool _remindersEnabled;
+
+  /// Categorías personalizadas creadas por el usuario en esta sesión.
+  final List<String> _customCategories = [];
  
   bool _isSaving = false;
  
@@ -64,7 +62,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   @override
   void initState() {
     super.initState();
-    // Los controladores se crean una sola vez aquí
     _nameController = TextEditingController();
     _goalController = TextEditingController();
     _loadValues(widget.habit);
@@ -75,25 +72,28 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     _goalController.text = '${habit?.goalPerDay ?? 1}';
     _type = habit?.type ?? HabitType.frecuente;
     _category = habit?.category ?? HabitCategory.values.first;
+    _categoryLabel = _category.label;
     _iconIndex = habit?.iconIndex ?? 0;
     _colorValue = habit?.colorValue ?? habitColorOptions.first.toARGB32();
     _repeat = habit?.repeat ?? HabitRepeat.diariamente;
     _days = {...?habit?.days};
     _allDay = habit?.allDay ?? true;
-    _reminderTime = habit?.reminderTime ?? HabitReminderTime.manana;
+    // Convierte el record del modelo a TimeOfDay.
+    final rt = habit?.reminderTime;
+    _reminderTime = rt != null ? TimeOfDay(hour: rt.hour, minute: rt.minute) : null;
     _allowSkip = habit?.allowSkip ?? false;
     _remindersEnabled = habit?.remindersEnabled ?? true;
   }
  
   @override
   void dispose() {
-    // Todo lo que se creó en initState se libera aquí
     _nameController.dispose();
     _goalController.dispose();
     _goalFocus.dispose();
     super.dispose();
   }
 
+  // ── Validaciones ──────────────────────────────────────────────────────────
  
   String? _validateName(String? value) {
     final name = (value ?? '').trim();
@@ -104,8 +104,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   }
  
   String? _validateGoal(String? value) {
-    // tryParse devuelve null si no es número. No usamos "?? 0" porque eso
-    // escondería el error
     final goal = int.tryParse((value ?? '').trim());
     if (goal == null) return 'Escribe un número';
     if (goal < 1) return 'La meta tiene que ser al menos 1';
@@ -114,7 +112,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   }
  
   String? _validateDays(Set<int>? days) {
-    // Solo los hábitos frecuentes que se repiten por semana necesitan días
     final needsDays =
         _type == HabitType.frecuente && _repeat == HabitRepeat.semanalmente;
     if (needsDays && (days == null || days.isEmpty)) {
@@ -123,42 +120,113 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     return null;
   }
 
-  /// Valida que la combinación tipo + repetición + días sea coherente,
-  /// replicando el constraint chk_schedule de la base de datos.
   String? _validateSchedule() {
-    if (_type == HabitType.fugaz) return null; // one_time no tiene schedule
+    if (_type == HabitType.fugaz) return null;
 
     switch (_repeat) {
       case HabitRepeat.diariamente:
-        return null; // siempre válido
+        return null;
       case HabitRepeat.semanalmente:
         if (_days.isEmpty) return 'Elige al menos un día de la semana';
+        return null;
       case HabitRepeat.mensualmente:
         if (_days.isEmpty) return 'Elige el día del mes';
         final day = _days.first;
         if (day < 1 || day > 31) return 'El día del mes debe ser entre 1 y 31';
+        return null;
     }
-    return null;
   }
- 
-  // Guardar
+
+  // ── Categoría personalizada ────────────────────────────────────────────────
+
+  Future<void> _showAddCategoryDialog() async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Nueva categoría'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          maxLength: 20,
+          decoration: InputDecoration(
+            hintText: 'Ej. Ejercicio',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(HabuuRadius.sm),
+              borderSide: const BorderSide(color: HabuuColors.primary500, width: 1.5),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(HabuuRadius.sm),
+              borderSide: const BorderSide(color: HabuuColors.primary500, width: 1.5),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: HabuuColors.primary500),
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Agregar'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+    if (name == null || name.isEmpty || !mounted) return;
+
+    // Evita duplicados (predefinidos o personalizados).
+    final exists = HabitCategory.values.any((c) => c.label.toLowerCase() == name.toLowerCase()) ||
+        _customCategories.any((c) => c.toLowerCase() == name.toLowerCase());
+    if (exists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Esa categoría ya existe')),
+      );
+      return;
+    }
+
+    setState(() {
+      _customCategories.add(name);
+      // Selecciona la nueva categoría automáticamente.
+      _categoryLabel = name;
+    });
+  }
+
+  /// Label de la categoría seleccionada (predefinida o personalizada).
+  /// Se usa para comparar con los chips que ahora trabajan con strings.
+  String _categoryLabel = '';
+
+  // ── Guardar ───────────────────────────────────────────────────────────────
  
   Habit _buildHabit() {
     final isFrequent = _type == HabitType.frecuente;
- 
+
+    // Resuelve la categoría: si el label coincide con un enum predefinido,
+    // usa ese; si no, usa el primero por defecto (las personalizadas se
+    // guardan por nombre en la BD a través del datasource).
+    final category = HabitCategory.values.firstWhere(
+      (c) => c.label == _categoryLabel,
+      orElse: () => _category,
+    );
+
     return Habit(
-      // Si es nuevo, el id lo pone el data source al guardarlo.
       id: widget.habit?.id ?? '',
       name: _nameController.text.trim(),
       type: _type,
-      category: _category,
+      category: category,
       iconIndex: _iconIndex,
       colorValue: _colorValue,
-      // Un hábito fugaz no se repite ni tiene días
       repeat: isFrequent ? _repeat : null,
       days: isFrequent ? _days : const {},
       allDay: _allDay,
-      reminderTime: _reminderTime,
+      reminderTime: _reminderTime != null
+          ? (hour: _reminderTime!.hour, minute: _reminderTime!.minute)
+          : null,
       goalPerDay: int.parse(_goalController.text.trim()),
       allowSkip: _allowSkip,
       remindersEnabled: _remindersEnabled,
@@ -167,10 +235,8 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   }
  
   Future<void> _save() async {
-    // Primero validamos todo el formulario; si algo falla no se guarda
     if (!_formKey.currentState!.validate()) return;
 
-    // Validación del schedule (replica chk_schedule de la BD).
     final scheduleError = _validateSchedule();
     if (scheduleError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -179,7 +245,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       return;
     }
 
-    // Cerramos el teclado antes de navegar
     FocusScope.of(context).unfocus();
     setState(() => _isSaving = true);
     final provider = context.read<HabitsProvider>();
@@ -188,8 +253,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
         ? await provider.updateHabit(habit)
         : await provider.addHabit(habit);
  
-    // Después de un await la pantalla pudo haberse cerrado. Si ya no está
-    // montada, no tocamos nada
     if (!mounted) return;
     setState(() => _isSaving = false);
  
@@ -214,8 +277,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       return;
     }
  
-    // Al crear usamos el Navigator raíz para que la pantalla de éxito tape
-    // también el navbar
     await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => const HabitSuccessScreen(
@@ -225,9 +286,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     );
  
     if (!mounted) return;
-    // Dejamos el formulario limpio para el siguiente hábito.
-    // Primero reset() y después cargamos los valores por defecto; al revés, reset() nos
-    // borraría el "1" de la meta
     _formKey.currentState?.reset();
     setState(() => _loadValues(null));
     widget.onSaved?.call();
@@ -241,7 +299,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     }
   }
 
-  // Interfaz
+  // ── Interfaz ──────────────────────────────────────────────────────────────
  
   @override
   Widget build(BuildContext context) {
@@ -307,7 +365,17 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                     gap: 16,
                     child: HabitCategoryChips(
                       selected: _category,
-                      onChanged: (c) => setState(() => _category = c),
+                      customCategories: _customCategories,
+                      onChanged: (label) => setState(() {
+                        _categoryLabel = label;
+                        // Si es predefinida, actualiza _category también.
+                        final predefined = HabitCategory.values
+                            .where((c) => c.label == label);
+                        if (predefined.isNotEmpty) {
+                          _category = predefined.first;
+                        }
+                      }),
+                      onAddNew: _showAddCategoryDialog,
                     ),
                   ),
  
@@ -331,8 +399,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                     ),
                   ),
  
-                  // "Repetir" y "En este día" solo existen para los
-                  // hábitos frecuentes
+                  // "Repetir" y selector de días solo existen para hábitos frecuentes.
                   if (isFrequent) ...[
                     const SizedBox(height: 33),
                     _Section(
@@ -342,51 +409,90 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                         options: HabitRepeat.values,
                         selected: _repeat,
                         labelOf: (r) => r.label,
-                        onChanged: (r) => setState(() => _repeat = r),
+                        onChanged: (r) => setState(() {
+                          _repeat = r;
+                          // Limpia los días al cambiar de tipo de repetición
+                          // para que no queden datos incoherentes.
+                          _days = {};
+                        }),
                       ),
                     ),
-                    const SizedBox(height: 33),
-                    // FormField nos deja validar algo que no es un campo de texto
-                    FormField<Set<int>>(
-                      initialValue: _days,
-                      validator: _validateDays,
-                      builder: (field) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          HabitDayPicker(
-                            selectedDays: _days,
-                            onDaysChanged: (days) {
-                              setState(() => _days = days);
-                              field.didChange(days);
-                            },
-                            allDay: _allDay,
-                            onAllDayChanged: (v) =>
-                                setState(() => _allDay = v),
-                          ),
-                          if (field.hasError)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                field.errorText!,
-                                style: HabuuText.captionMdMedium.copyWith(
-                                  color: HabuuTextColors.error,
+
+                    // Solo muestra el selector de días si NO es diario.
+                    if (_repeat != HabitRepeat.diariamente) ...[
+                      const SizedBox(height: 33),
+                      if (_repeat == HabitRepeat.semanalmente)
+                        FormField<Set<int>>(
+                          initialValue: _days,
+                          validator: _validateDays,
+                          builder: (field) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              HabitDayPicker(
+                                selectedDays: _days,
+                                onDaysChanged: (days) {
+                                  setState(() => _days = days);
+                                  field.didChange(days);
+                                },
+                                allDay: _allDay,
+                                onAllDayChanged: (v) =>
+                                    setState(() => _allDay = v),
+                              ),
+                              if (field.hasError)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    field.errorText!,
+                                    style: HabuuText.captionMdMedium.copyWith(
+                                      color: HabuuTextColors.error,
+                                    ),
+                                  ),
                                 ),
+                            ],
+                          ),
+                        )
+                      else if (_repeat == HabitRepeat.mensualmente)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Elige el día del mes',
+                              style: HabuuText.subtitleSmMedium.copyWith(
+                                color: HabuuTextColors.primaryBlack,
                               ),
                             ),
-                        ],
-                      ),
-                    ),
+                            const SizedBox(height: 18),
+                            HabitMonthDayPicker(
+                              selectedDay: _days.isNotEmpty ? _days.first : null,
+                              onChanged: (day) {
+                                setState(() {
+                                  _days = day != null ? {day} : {};
+                                });
+                              },
+                            ),
+                            if (_days.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  'Selecciona un día del calendario',
+                                  style: HabuuText.captionMdMedium.copyWith(
+                                    color: HabuuTextColors.error,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                    ],
                   ],
  
                   const SizedBox(height: 33),
                   _Section(
                     label: 'Recordar',
                     gap: 18,
-                    child: HabitSegmentedControl<HabitReminderTime>(
-                      options: HabitReminderTime.values,
-                      selected: _reminderTime,
-                      labelOf: (t) => t.label,
-                      onChanged: (t) => setState(() => _reminderTime = t),
+                    child: HabitTimePicker(
+                      selectedTime: _reminderTime,
+                      onChanged: (time) =>
+                          setState(() => _reminderTime = time),
                     ),
                   ),
  
@@ -400,7 +506,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                       validator: _validateGoal,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
-                      // Solo deja escribir números
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                         LengthLimitingTextInputFormatter(2),
@@ -485,7 +590,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   }
 }
  
-/// Flecha de regresar + título centrado
 class _Header extends StatelessWidget {
   const _Header({required this.title, required this.onBack});
  
@@ -514,8 +618,6 @@ class _Header extends StatelessWidget {
             ),
           ),
         ),
-        // Espacio del mismo ancho que la flecha para que el título quede
-        // centrado de verdad
         const SizedBox(width: 48),
       ],
     );
@@ -570,8 +672,6 @@ class _SaveButton extends StatelessWidget {
       width: width,
       height: 52,
       child: ElevatedButton(
-        // Mientras guarda, el botón se desactiva para que no se cree el
-        // mismo hábito dos veces por un doble toque
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: HabuuColors.primary500,

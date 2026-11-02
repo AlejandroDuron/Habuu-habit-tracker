@@ -1,7 +1,7 @@
 enum HabitType {
   frecuente('Habito Frecuente'),
   fugaz('Habito fugaz');
- 
+
   const HabitType(this.label);
   final String label;
 }
@@ -11,34 +11,21 @@ enum HabitCategory {
   salud('Salud'),
   hogar('Hogar'),
   universidad('Universidad');
- 
+
   const HabitCategory(this.label);
- 
   final String label;
 }
- 
+
 /// Cada cuánto se repite un hábito
 enum HabitRepeat {
   diariamente('Diariamente'),
   semanalmente('Semanalmente'),
   mensualmente('Mensualmente');
- 
+
   const HabitRepeat(this.label);
- 
   final String label;
 }
- 
-/// En qué parte del día se le recuerda al usuario
-enum HabitReminderTime {
-  manana('Mañana'),
-  tarde('Tarde'),
-  noche('Noche');
- 
-  const HabitReminderTime(this.label);
- 
-  final String label;
-}
- 
+
 class Habit {
   Habit({
     required this.id,
@@ -59,52 +46,46 @@ class Habit {
         assert(goalPerDay > 0, 'La meta tiene que ser al menos 1'),
         assert(iconIndex >= 0, 'El índice del ícono no puede ser negativo'),
         assert(
-          days.every((d) => d >= DateTime.monday && d <= DateTime.sunday),
-          'Los días van del 1 (lunes) al 7 (domingo), como DateTime.weekday',
+          days.every((d) => d >= 1 && d <= 31),
+          'Los días deben estar en el rango 1–31',
         ),
-        // Un hábito fugaz no se repite
         assert(
           type == HabitType.frecuente || repeat == null,
           'Un hábito fugaz no lleva repetición',
         );
- 
-  /// ID Lo genera el data source al crear el hábito.
+
   final String id;
- 
   final String name;
   final HabitType type;
   final HabitCategory category;
- 
-  /// Posición del ícono elegido en la fila de icons
-  /// Guardamos el número y no el ícono porque el ícono es cosa de la UI
+
+  /// Posición del ícono elegido en la fila de icons.
   final int iconIndex;
   final int colorValue;
- 
-  /// Solo los hábitos frecuentes tienen repetición; en los fugaces es null
+
+  /// Solo los hábitos frecuentes tienen repetición; en los fugaces es null.
   final HabitRepeat? repeat;
- 
-  /// Días seleccionados en "en este día", con los números de DateTime.weekday.
-  ///Es un Set porque un día no se repite.
+
+  /// - Semanal: números de DateTime.weekday (1=lunes … 7=domingo).
+  /// - Mensual: un único día del mes (1–31).
   final Set<int> days;
   final bool allDay;
- 
-  final HabitReminderTime reminderTime;
- 
-  /// Cuántas veces al día hay que cumplirlo
+
+  /// Hora específica del recordatorio. Null si los recordatorios están desactivados.
+  final ({int hour, int minute})? reminderTime;
+
+  /// Cuántas veces al día hay que cumplirlo.
   final int goalPerDay;
   final bool allowSkip;
   final bool remindersEnabled;
- 
+
   final DateTime createdAt;
- 
+
   bool get isFrequent => type == HabitType.frecuente;
- 
-  /// Texto que se muestra en el campo "Meta", por ejemplo "1 Vez o más al día".
+
   String get goalLabel =>
       goalPerDay == 1 ? '1 Vez o más al día' : '$goalPerDay veces al día';
- 
-  /// Como repeat puede ser null a propósito, usamos
-  /// clearRepeat para poder borrarlo; con ?? no se podría.
+
   Habit copyWith({
     String? id,
     String? name,
@@ -116,7 +97,8 @@ class Habit {
     bool clearRepeat = false,
     Set<int>? days,
     bool? allDay,
-    HabitReminderTime? reminderTime,
+    ({int hour, int minute})? reminderTime,
+    bool clearReminderTime = false,
     int? goalPerDay,
     bool? allowSkip,
     bool? remindersEnabled,
@@ -132,15 +114,15 @@ class Habit {
       repeat: clearRepeat ? null : (repeat ?? this.repeat),
       days: days ?? this.days,
       allDay: allDay ?? this.allDay,
-      reminderTime: reminderTime ?? this.reminderTime,
+      reminderTime:
+          clearReminderTime ? null : (reminderTime ?? this.reminderTime),
       goalPerDay: goalPerDay ?? this.goalPerDay,
       allowSkip: allowSkip ?? this.allowSkip,
       remindersEnabled: remindersEnabled ?? this.remindersEnabled,
       createdAt: createdAt ?? this.createdAt,
     );
   }
- 
-  /// Convierte el hábito a un Map
+
   Map<String, Object?> toMap() {
     return {
       'id': id,
@@ -152,18 +134,21 @@ class Habit {
       'repeat': repeat?.name,
       'days': days.toList()..sort(),
       'allDay': allDay,
-      'reminderTime': reminderTime.name,
+      'reminderHour': reminderTime?.hour,
+      'reminderMinute': reminderTime?.minute,
       'goalPerDay': goalPerDay,
       'allowSkip': allowSkip,
       'remindersEnabled': remindersEnabled,
       'createdAt': createdAt.toIso8601String(),
     };
   }
-  
+
   factory Habit.fromMap(Map<String, Object?> map) {
     final repeatName = map['repeat'] as String?;
     final rawDays = (map['days'] as List<Object?>?) ?? const [];
- 
+    final reminderHour = (map['reminderHour'] as num?)?.toInt();
+    final reminderMinute = (map['reminderMinute'] as num?)?.toInt();
+
     return Habit(
       id: map['id'] as String,
       name: map['name'] as String,
@@ -174,8 +159,9 @@ class Habit {
       repeat: repeatName == null ? null : HabitRepeat.values.byName(repeatName),
       days: rawDays.map((d) => (d as num).toInt()).toSet(),
       allDay: map['allDay'] as bool? ?? false,
-      reminderTime:
-          HabitReminderTime.values.byName(map['reminderTime'] as String),
+      reminderTime: (reminderHour != null && reminderMinute != null)
+          ? (hour: reminderHour, minute: reminderMinute)
+          : null,
       goalPerDay: (map['goalPerDay'] as num).toInt(),
       allowSkip: map['allowSkip'] as bool? ?? false,
       remindersEnabled: map['remindersEnabled'] as bool? ?? true,

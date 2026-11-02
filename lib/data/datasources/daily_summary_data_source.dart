@@ -5,6 +5,10 @@ abstract interface class DailySummaryDataSource {
 
   /// Trae todas las fechas marcadas como completadas desde [since].
   Future<Set<DateTime>> getCompletedDays({required DateTime since});
+
+  /// Devuelve el total de días completados acumulados del usuario (sin límite de fecha).
+  /// Se usa para evaluar el trofeo streak_300.
+  Future<int> getTotalCompletedDays();
 }
 
 /// Error al leer o escribir el resumen diario.
