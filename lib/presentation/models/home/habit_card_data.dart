@@ -1,39 +1,59 @@
+import 'dart:ui';
+
 import '../../../config/assets.dart';
+import '../../../config/theme/tokens.dart';
+import '../../../data/models/home_habit.dart';
+import '../../../data/models/today_habit.dart';
+import '../../../utils/habit_style.dart';
 
 /// Lo que necesita una HabitCard para dibujarse.
-/// Sirve tanto para hábitos como para retos.
 class HabitCardData {
   const HabitCardData({
+    required this.habitId,
     required this.title,
-    required this.progressLabel,
-    required this.loaderIcon,
-    this.doneIcon = HomeAssets.done,
-    this.avatars = 0,
-    this.extraFriends = 0,
-    this.progressFraction,
-  }) : assert(
-         progressFraction == null ||
-             (progressFraction >= 0 && progressFraction <= 1),
-         'El progreso va de 0 a 1',
-       );
+    required this.subtitle,
+    required this.iconAsset,
+    this.color = defaultColor,
+    this.isDone = false,
+  });
 
+  /// Arma la tarjeta de un hábito de hoy. Si el ícono o el color guardados
+  /// no son válidos, usa los de por defecto en vez de fallar.
+  factory HabitCardData.fromTodayHabit(TodayHabit today) {
+    final habit = today.habit;
+    return HabitCardData(
+      habitId: habit.id,
+      title: habit.name,
+      subtitle: habit.goal ?? _scheduleLabel(habit),
+      iconAsset: HabitIconAssets.forKey(habit.iconKey),
+      color: colorFromHex(habit.color) ?? defaultColor,
+      isDone: today.isDone,
+    );
+  }
+
+  static const defaultColor = HabuuColors.success700;
+
+  final String habitId;
   final String title;
 
-  /// Texto debajo del título, por ejemplo "500/2000 ML".
-  final String progressLabel;
+  /// Texto debajo del título, por ejemplo la meta del hábito.
+  final String subtitle;
 
-  final String loaderIcon;
-  final String doneIcon;
+  final String iconAsset;
 
-  /// Cuántos avatares de amigos se muestran.
-  final int avatars;
+  /// Color que eligió el usuario para el hábito.
+  final Color color;
 
-  /// Amigos que no caben, se muestran como "+N".
-  final int extraFriends;
+  /// Si ya se cumplió hoy.
+  final bool isDone;
 
-  /// Si no es null, se dibuja la barra de progreso (tarjetas de reto).
-  final double? progressFraction;
-
-  bool get hasFriends => avatars > 0 || extraFriends > 0;
-  bool get hasProgressBar => progressFraction != null;
+  /// Si el hábito no tiene meta escrita, se dice cada cuánto toca.
+  static String _scheduleLabel(HomeHabit habit) {
+    return switch ((habit.type, habit.frequency)) {
+      (HomeHabitType.oneTime, _) => 'Solo por hoy',
+      (_, HabitFrequency.weekly) => 'Cada semana',
+      (_, HabitFrequency.monthly) => 'Cada mes',
+      (_, null) => '',
+    };
+  }
 }

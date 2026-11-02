@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../../config/theme/tokens.dart';
-import '../../models/home/habit_card_data.dart';
-import 'add_icon.dart';
-import 'friends_avatars.dart';
-import 'habit_progress_bar.dart';
 
-/// Tarjeta de un hábito o reto: ícono, título, progreso, amigos y acciones.
+import '../../../config/assets.dart';
+import '../../../config/theme/tokens.dart';
+import '../../../utils/habit_style.dart';
+import '../../models/home/habit_card_data.dart';
+import 'habit_loader.dart';
+
+/// Tarjeta de un hábito: ícono, título, meta y el botón de completar.
 class HabitCard extends StatelessWidget {
-  const HabitCard({super.key, required this.data});
+  const HabitCard({super.key, required this.data, this.onDone});
 
   final HabitCardData data;
 
+  /// Se llama al tocar el botón de completar mientras sigue pendiente.
+  final VoidCallback? onDone;
+
   @override
   Widget build(BuildContext context) {
-    final card = Container(
-      // Las tarjetas de reto miden 79px: 11px extra abajo para la barra.
-      padding: EdgeInsets.fromLTRB(16, 16, 16, data.hasProgressBar ? 27 : 16),
+    return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: HabuuColors.white100,
         borderRadius: BorderRadius.circular(12),
@@ -24,40 +27,25 @@ class HabitCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          SvgPicture.asset(data.loaderIcon, width: 36, height: 36),
+          HabitLoader(
+            iconAsset: data.iconAsset,
+            color: data.color,
+            isDone: data.isDone,
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _TitleAndProgress(data: data)),
+          Expanded(child: _TitleAndSubtitle(data: data)),
           const SizedBox(width: 12),
-          if (data.hasFriends) ...[
-            FriendsAvatars(avatars: data.avatars, extra: data.extraFriends),
-            const SizedBox(width: 12),
-          ],
-          SvgPicture.asset(data.doneIcon, width: 36, height: 36),
-          const SizedBox(width: 12),
-          const AddIcon(),
+          data.isDone
+              ? _DoneMark(color: readableOnWhite(data.color))
+              : _DoneButton(onPressed: onDone),
         ],
       ),
-    );
-
-    if (!data.hasProgressBar) return card;
-
-    return Stack(
-      children: [
-        card,
-        Positioned(
-          left: 31,
-          right: 37,
-          bottom: 10,
-          height: 4,
-          child: HabitProgressBar(fraction: data.progressFraction!),
-        ),
-      ],
     );
   }
 }
 
-class _TitleAndProgress extends StatelessWidget {
-  const _TitleAndProgress({required this.data});
+class _TitleAndSubtitle extends StatelessWidget {
+  const _TitleAndSubtitle({required this.data});
 
   final HabitCardData data;
 
@@ -71,12 +59,62 @@ class _TitleAndProgress extends StatelessWidget {
         children: [
           Text(data.title, style: HabuuText.bodySmSemibold),
           Text(
-            data.progressLabel,
+            data.subtitle,
             style: HabuuText.captionSmMedium.copyWith(
               color: HabuuColors.black60,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Cheque relleno del color del hábito, para cuando ya se cumplió.
+/// Mide lo mismo que el botón de completar para que la fila no se mueva.
+class _DoneMark extends StatelessWidget {
+  const _DoneMark({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Hábito cumplido',
+      child: SizedBox.square(
+        dimension: 36,
+        child: Center(
+          child: Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: const Icon(
+              Icons.check_rounded,
+              size: 14,
+              color: HabuuColors.white100,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Botón para marcar el hábito como cumplido.
+class _DoneButton extends StatelessWidget {
+  const _DoneButton({required this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Marcar como cumplido',
+      child: InkResponse(
+        onTap: onPressed,
+        radius: 24,
+        child: SvgPicture.asset(HomeAssets.done, width: 36, height: 36),
       ),
     );
   }

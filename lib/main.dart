@@ -4,10 +4,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import '/config/routes.dart'; // AUTH
 import '/data/datasources/in_memory_habit_data_source.dart';
+import '/data/datasources/supabase_home_data_source.dart';
 import '/data/repositories/habit_repository.dart';
+import '/data/repositories/home_repository.dart';
 import '/presentation/providers/auth_provider.dart'; // AUTH
 import '/presentation/providers/habits_provider.dart';
+import '/presentation/providers/home_provider.dart';
 import '/presentation/screens/landing/landing_screen.dart';
+import '/utils/dev_session.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final GlobalKey<NavigatorState> _navigatorKey =
@@ -21,6 +25,7 @@ Future<void> main() async {
     url: const String.fromEnvironment('SUPABASE_URL'),
     publishableKey: const String.fromEnvironment('SUPABASE_KEY'),
   );
+  await signInForDevelopment(Supabase.instance.client);
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -36,6 +41,11 @@ Future<void> main() async {
           create: (_) => HabitsProvider(
             HabitRepository(InMemoryHabitDataSource()),
           )..loadHabits(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => HomeProvider(
+            HomeRepository(SupabaseHomeDataSource(Supabase.instance.client)),
+          ),
         ),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],

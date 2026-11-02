@@ -63,8 +63,10 @@ flutter:
   assets:
     - assets/icons/
     - assets/icons/auth/
+    - assets/icons/habits/
     - assets/icons/home/
     - assets/icons/navbar/
+    - assets/icons/pet_frog/
     - assets/images/
     - assets/images/auth/
     - assets/images/calendar/

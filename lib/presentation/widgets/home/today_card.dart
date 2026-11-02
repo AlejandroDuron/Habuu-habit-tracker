@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../../config/theme/tokens.dart';
 import '../../models/home/calendar_day.dart';
 import 'day_strip.dart';
@@ -7,9 +8,12 @@ import 'pond_hero.dart';
 
 /// Tarjeta "Hoy": tira de días y la rana en el estanque.
 class TodayCard extends StatelessWidget {
-  const TodayCard({super.key, required this.days});
+  const TodayCard({super.key, required this.days, required this.frogAwake});
 
   final List<CalendarDay> days;
+
+  /// Si Froggy está despierta en el estanque.
+  final bool frogAwake;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +49,7 @@ class TodayCard extends StatelessWidget {
           const SizedBox(height: 22),
           DayStrip(days: days),
           const SizedBox(height: 22),
-          const PondHero(),
+          PondHero(frogAwake: frogAwake),
         ],
       ),
     );
