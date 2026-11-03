@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:habuu/config/assets.dart';
 import 'package:habuu/config/theme/tokens.dart';
+import 'package:habuu/presentation/providers/auth_provider.dart';
 import 'package:habuu/presentation/screens/auth/verification/code_sent_screen.dart';
 import 'package:habuu/presentation/widgets/auth/auth_button.dart';
 import 'package:habuu/presentation/widgets/auth/auth_scaffold.dart';
 import 'package:habuu/presentation/widgets/auth/code_input.dart';
-import 'package:habuu/presentation/providers/auth_provider.dart';
 import 'package:habuu/utils/auth_feedback.dart';
 import 'package:provider/provider.dart';
 
-/// Pantalla reutilizable para ingresar el código de 5 dígitos.
+/// Pantalla reutilizable para ingresar el código de verificación.
 /// La usan el registro ("Verificar cuenta") y la recuperación de contraseña
 /// ("Verificar código"). El [AuthProvider] sabe qué flujo está activo; esta
 /// pantalla solo decide qué hacer después en [onVerified].
@@ -30,7 +30,8 @@ class CodeVerificationScreen extends StatefulWidget {
 }
 
 class _CodeVerificationScreenState extends State<CodeVerificationScreen> {
-  static const _codeLength = 5;
+  /// Debe coincidir con la longitud configurada en Supabase (por defecto 6).
+  static const _codeLength = 6;
 
   String _code = '';
   String? _errorText;
