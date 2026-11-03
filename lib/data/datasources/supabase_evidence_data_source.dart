@@ -47,6 +47,11 @@ class SupabaseEvidenceDataSource implements EvidenceDataSource {
   }
 
   @override
+  Future<Uint8List> download(String path) {
+    return _client.storage.from(_bucket).download(path);
+  }
+
+  @override
   Future<void> delete(String path) async {
     await _client.storage.from(_bucket).remove([path]);
   }

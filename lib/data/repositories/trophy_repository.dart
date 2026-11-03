@@ -15,7 +15,7 @@ abstract final class TrophyKeys {
 
 class TrophyRepository {
   TrophyRepository(this._dataSource, {DailySummaryDataSource? dailySummary})
-      : _dailySummary = dailySummary;
+    : _dailySummary = dailySummary;
 
   final TrophyDataSource _dataSource;
 
@@ -23,7 +23,8 @@ class TrophyRepository {
   final DailySummaryDataSource? _dailySummary;
 
   /// Trae todos los trofeos y los separa entre ganados y pendientes.
-  Future<({List<EarnedTrophy> earned, List<Trophy> locked})> getTrophies() async {
+  Future<({List<EarnedTrophy> earned, List<Trophy> locked})>
+  getTrophies() async {
     final results = await Future.wait([
       _dataSource.getAllTrophies(),
       _dataSource.getEarnedTrophies(),
@@ -95,9 +96,10 @@ class TrophyRepository {
 
   /// Intenta otorgar [one_month] si el usuario tiene al menos 30 días
   /// desde que creó su primer hábito ([firstHabitDate]).
-  Future<EarnedTrophy?> checkOneMonth({required DateTime firstHabitDate}) async {
-    final monthPassed =
-        DateTime.now().difference(firstHabitDate).inDays >= 30;
+  Future<EarnedTrophy?> checkOneMonth({
+    required DateTime firstHabitDate,
+  }) async {
+    final monthPassed = DateTime.now().difference(firstHabitDate).inDays >= 30;
     if (!monthPassed) return null;
     return _dataSource.awardTrophy(TrophyKeys.oneMonth);
   }

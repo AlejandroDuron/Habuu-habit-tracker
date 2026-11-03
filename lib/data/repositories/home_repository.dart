@@ -4,10 +4,12 @@ import '../../services/photo_compressor.dart';
 import '../../utils/habit_schedule.dart';
 import '../datasources/daily_summary_data_source.dart';
 import '../datasources/evidence_data_source.dart';
+import '../datasources/habit_photo_verifier.dart';
 import '../datasources/home_data_source.dart';
 import '../models/habit_log.dart';
 import '../models/home_habit.dart';
 import '../models/today_habit.dart';
+import '../models/verification_result.dart';
 
 /// Error al intentar omitir un hábito que no lo permite.
 class SkipNotAllowedException implements Exception {
@@ -23,12 +25,14 @@ class HomeRepository {
     this._dataSource,
     this._evidence,
     this._dailySummary, {
+    required this._verifier,
     Future<Uint8List> Function(Uint8List photo)? compressPhoto,
   }) : _compressPhoto = compressPhoto ?? compressEvidencePhoto;
 
   final HomeDataSource _dataSource;
   final EvidenceDataSource _evidence;
   final DailySummaryDataSource _dailySummary;
+  final HabitPhotoVerifier _verifier;
   final Future<Uint8List> Function(Uint8List photo) _compressPhoto;
 
   /// Hábitos que tocan en [day], cada uno con su registro de ese día.
@@ -83,6 +87,42 @@ class HomeRepository {
       rethrow;
     }
   }
+
+  /// Comprime y sube la foto, pero todavía no marca el hábito.
+  /// Devuelve la ruta donde quedó.
+  Future<String> uploadEvidence(
+    String habitId,
+    DateTime day,
+    Uint8List photo,
+  ) async {
+    final compressed = await _compressPhoto(photo);
+    return _evidence.upload(habitId: habitId, day: day, bytes: compressed);
+  }
+
+  /// Revisa si la foto en [path] tiene que ver con [habit].
+  Future<VerificationResult> verifyEvidence(String path, HomeHabit habit) {
+    return _verifier.verify(photoPath: path, habit: habit);
+  }
+
+  /// Marca el hábito como cumplido con una foto que ya está subida.
+  Future<HabitLog> markDoneWithEvidence(
+    String habitId,
+    DateTime day,
+    String path,
+  ) {
+    return _dataSource.saveLog(
+      habitId: habitId,
+      day: day,
+      status: LogStatus.done,
+      evidencePath: path,
+    );
+  }
+
+  /// Baja una foto de evidencia ya guardada.
+  Future<Uint8List> downloadEvidence(String path) => _evidence.download(path);
+
+  /// Borra una foto que se subió pero no se usó en ningún registro.
+  Future<void> discardEvidence(String path) => _deleteQuietly(path);
 
   /// Marca un hábito como omitido en [day].
   ///

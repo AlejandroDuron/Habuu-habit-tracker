@@ -43,18 +43,18 @@ class Habit {
     this.allowSkip = false,
     this.remindersEnabled = true,
     String? categoryLabel,
-  })  : categoryLabel = categoryLabel ?? category.label,
-        assert(name.trim().isNotEmpty, 'El nombre no puede ir vacío'),
-        assert(goalPerDay > 0, 'La meta tiene que ser al menos 1'),
-        assert(iconIndex >= 0, 'El índice del ícono no puede ser negativo'),
-        assert(
-          days.every((d) => d >= 1 && d <= 31),
-          'Los días deben estar en el rango 1–31',
-        ),
-        assert(
-          type == HabitType.frecuente || repeat == null,
-          'Un hábito fugaz no lleva repetición',
-        );
+  }) : categoryLabel = categoryLabel ?? category.label,
+       assert(name.trim().isNotEmpty, 'El nombre no puede ir vacío'),
+       assert(goalPerDay > 0, 'La meta tiene que ser al menos 1'),
+       assert(iconIndex >= 0, 'El índice del ícono no puede ser negativo'),
+       assert(
+         days.every((d) => d >= 1 && d <= 31),
+         'Los días deben estar en el rango 1–31',
+       ),
+       assert(
+         type == HabitType.frecuente || repeat == null,
+         'Un hábito fugaz no lleva repetición',
+       );
 
   final String id;
   final String name;
@@ -123,8 +123,9 @@ class Habit {
       repeat: clearRepeat ? null : (repeat ?? this.repeat),
       days: days ?? this.days,
       allDay: allDay ?? this.allDay,
-      reminderTime:
-          clearReminderTime ? null : (reminderTime ?? this.reminderTime),
+      reminderTime: clearReminderTime
+          ? null
+          : (reminderTime ?? this.reminderTime),
       goalPerDay: goalPerDay ?? this.goalPerDay,
       allowSkip: allowSkip ?? this.allowSkip,
       remindersEnabled: remindersEnabled ?? this.remindersEnabled,

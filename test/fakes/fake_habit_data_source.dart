@@ -1,6 +1,5 @@
 // Los datos son fakes porque segun lo visto en clase, asi simulamos el comportamiento de la fuente de dtaos real.
 
-
 import 'package:habuu/data/datasources/habit_data_source.dart';
 import 'package:habuu/data/models/habit.dart';
 import 'package:habuu/data/models/habit_log.dart';
@@ -9,8 +8,8 @@ class FakeHabitDataSource implements HabitDataSource {
   FakeHabitDataSource({
     List<Habit> initialHabits = const [],
     Map<String, LogStatus> logStatuses = const {},
-  })  : _habits = [...initialHabits],
-        _logStatuses = {...logStatuses};
+  }) : _habits = [...initialHabits],
+       _logStatuses = {...logStatuses};
 
   final List<Habit> _habits;
   final Map<String, LogStatus> _logStatuses;

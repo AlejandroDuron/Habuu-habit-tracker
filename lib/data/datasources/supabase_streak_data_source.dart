@@ -54,10 +54,7 @@ class SupabaseStreakDataSource implements StreakDataSource {
 
       // Los días a marcar en el calendario son TODOS los días completados
       // del historial (no solo la racha actual), para mostrar el progreso pasado.
-      return StreakData(
-        currentStreak: streak,
-        streakDays: completedDays,
-      );
+      return StreakData(currentStreak: streak, streakDays: completedDays);
     });
   }
 
@@ -67,10 +64,7 @@ class SupabaseStreakDataSource implements StreakDataSource {
     return user.id;
   }
 
-  Future<T> _request<T>(
-    String errorMessage,
-    Future<T> Function() query,
-  ) async {
+  Future<T> _request<T>(String errorMessage, Future<T> Function() query) async {
     try {
       return await query();
     } on PostgrestException catch (e) {
