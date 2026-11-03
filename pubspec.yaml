@@ -72,6 +72,7 @@ flutter:
     - assets/icons/
     - assets/icons/auth/
     - assets/icons/habits/
+    - assets/icons/habits_list/
     - assets/icons/home/
     - assets/icons/navbar/
     - assets/icons/pet_frog/

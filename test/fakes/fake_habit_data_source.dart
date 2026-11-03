@@ -8,11 +8,14 @@ class FakeHabitDataSource implements HabitDataSource {
   FakeHabitDataSource({
     List<Habit> initialHabits = const [],
     Map<String, LogStatus> logStatuses = const {},
+    List<HabitLog> logs = const [],
   }) : _habits = [...initialHabits],
-       _logStatuses = {...logStatuses};
+       _logStatuses = {...logStatuses},
+       _logs = [...logs];
 
   final List<Habit> _habits;
   final Map<String, LogStatus> _logStatuses;
+  final List<HabitLog> _logs;
 
   ///Sirve para probar qué hace la app cuando falla la conexión
   bool shouldFail = false;
@@ -61,6 +64,16 @@ class FakeHabitDataSource implements HabitDataSource {
   Future<Map<String, LogStatus>> getLogStatusesForDay(DateTime day) async {
     _failIfNeeded();
     return Map.unmodifiable(_logStatuses);
+  }
+
+  @override
+  Future<List<HabitLog>> getLogsBetween(DateTime start, DateTime end) async {
+    _failIfNeeded();
+    return List.unmodifiable(
+      _logs.where(
+        (log) => !log.logDate.isBefore(start) && !log.logDate.isAfter(end),
+      ),
+    );
   }
 }
 

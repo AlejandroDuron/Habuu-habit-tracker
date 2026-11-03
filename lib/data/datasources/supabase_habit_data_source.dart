@@ -360,6 +360,19 @@ class SupabaseHabitDataSource implements HabitDataSource {
     });
   }
 
+  @override
+  Future<List<HabitLog>> getLogsBetween(DateTime start, DateTime end) {
+    return _request('No se pudo cargar tu semana', () async {
+      final rows = await _client
+          .from('habit_logs')
+          .select('habit_log_id, habit_id, log_date, status, evidence_path')
+          .gte('log_date', isoDate(start))
+          .lte('log_date', isoDate(end));
+
+      return [for (final row in rows) HabitLog.fromMap(row)];
+    });
+  }
+
   String get _userId {
     final user = _client.auth.currentUser;
     if (user == null) throw Exception('No hay una sesión iniciada');
