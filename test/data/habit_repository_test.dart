@@ -20,11 +20,13 @@ void main() {
   });
 
   test('getHabits devuelve del más nuevo al más viejo', () async {
-    dataSource = FakeHabitDataSource(initialHabits: [
-      buildHabit(id: '1', name: 'Viejo', createdAt: DateTime(2026, 10, 1)),
-      buildHabit(id: '2', name: 'Nuevo', createdAt: DateTime(2026, 11, 1)),
-      buildHabit(id: '3', name: 'Medio', createdAt: DateTime(2026, 10, 15)),
-    ]);
+    dataSource = FakeHabitDataSource(
+      initialHabits: [
+        buildHabit(id: '1', name: 'Viejo', createdAt: DateTime(2026, 10, 1)),
+        buildHabit(id: '2', name: 'Nuevo', createdAt: DateTime(2026, 11, 1)),
+        buildHabit(id: '3', name: 'Medio', createdAt: DateTime(2026, 10, 15)),
+      ],
+    );
     repository = HabitRepository(dataSource);
 
     final habits = await repository.getHabits();

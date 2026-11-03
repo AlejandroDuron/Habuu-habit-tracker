@@ -7,10 +7,14 @@ import '../../models/home/calendar_day.dart';
 import '../../models/home/habit_card_data.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/trophies_provider.dart';
+import '../../providers/verification_settings_provider.dart';
 import '../../widgets/home/evidence_panel.dart';
+import '../../widgets/home/evidence_photo_panel.dart';
+import '../../widgets/home/frog_mood_builder.dart';
 import '../../widgets/home/habit_section.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/home/today_card.dart';
+import '../../widgets/shared/verification_dialogs.dart';
 import '../../widgets/thophies/trophy_earned_toast.dart';
 
 /// Pantalla Home de Habuu
@@ -36,9 +40,20 @@ class _HomePageState extends State<HomePage> {
 
   /// Abre el panel de la foto de ese hábito, o lo cierra si ya estaba abierto.
   void _togglePanel(HabitCardData card) {
+    final previous = _expandedHabitId;
+    if (previous != null) {
+      context.read<HomeProvider>().dismissEvidence(previous);
+    }
     setState(() {
-      _expandedHabitId = _expandedHabitId == card.habitId ? null : card.habitId;
+      _expandedHabitId = previous == card.habitId ? null : card.habitId;
     });
+  }
+
+  void _closePanel() {
+    final id = _expandedHabitId;
+    if (id == null) return;
+    context.read<HomeProvider>().dismissEvidence(id);
+    setState(() => _expandedHabitId = null);
   }
 
   /// Marca el hábito como cumplido, con foto o sin ella, y cierra el panel.
@@ -50,11 +65,50 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
 
     if (error == null) {
-      setState(() => _expandedHabitId = null);
+      _closePanel();
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error)));
+      _showError(error);
     }
+  }
+
+  /// Sube la foto y, si el usuario lo aceptó, la manda a revisar. La primera
+  /// vez se le pregunta.
+  Future<void> _save(HabitCardData card, Uint8List photo) async {
+    final settings = context.read<VerificationSettingsProvider>();
+    final home = context.read<HomeProvider>();
+
+    var verify = await settings.current();
+    if (!mounted) return;
+    if (verify == null) {
+      verify = await showVerificationConsentDialog(context);
+      if (!mounted) return;
+      await settings.setEnabled(verify);
+      if (!mounted) return;
+    }
+
+    if (!verify) return _complete(card, photo: photo);
+
+    final error = await home.submitEvidence(card.habitId, photo);
+    if (!mounted) return;
+    if (error != null) _showError(error);
+  }
+
+  Future<void> _saveWithoutVerification(HabitCardData card) async {
+    final error = await context.read<HomeProvider>().saveWithoutVerification(
+      card.habitId,
+    );
+    if (!mounted) return;
+
+    if (error == null) {
+      _closePanel();
+    } else {
+      _showError(error);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Genera la tira de días del calendario: 4 antes de hoy, hoy, 4 después.
@@ -100,17 +154,40 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     const HomeHeader(),
                     const SizedBox(height: 23),
-                    TodayCard(days: _buildDays(home.frogAwake), frogAwake: home.frogAwake),
+                    FrogMoodBuilder(
+                      awake: home.frogAwake,
+                      lastDoneAt: home.lastDoneAt,
+                      builder: (context, mood) => TodayCard(
+                        days: _buildDays(home.frogAwake),
+                        frogMood: mood,
+                      ),
+                    ),
                     const SizedBox(height: 23),
                     _HabitsContent(
                       home: home,
                       onDone: _togglePanel,
                       expandedHabitId: _expandedHabitId,
-                      panelBuilder: (card) => EvidencePanel(
-                        allowSkip: card.allowSkip,
-                        onSave: (photo) => _complete(card, photo: photo),
-                        onSkip: () => _complete(card),
-                      ),
+                      panelBuilder: (card) {
+                        final check = home.evidenceCheckFor(card.habitId);
+                        // Ya cumplido y sin una revisión en curso: solo se
+                        // ve la foto.
+                        if (card.isDone && check == null) {
+                          return EvidencePhotoPanel(
+                            loadPhoto: () =>
+                                home.evidencePhotoFor(card.habitId),
+                            onClose: _closePanel,
+                          );
+                        }
+                        return EvidencePanel(
+                          allowSkip: card.allowSkip,
+                          check: check,
+                          onSave: (photo) => _save(card, photo),
+                          onSkip: () => _complete(card),
+                          onRetry: () => home.retryVerification(card.habitId),
+                          onSaveAnyway: () => _saveWithoutVerification(card),
+                          onFinish: _closePanel,
+                        );
+                      },
                     ),
                   ],
                 ),

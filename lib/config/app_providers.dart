@@ -2,12 +2,14 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '/data/datasources/gemini_edge_function_photo_verifier.dart';
 import '/data/datasources/supabase_daily_summary_data_source.dart';
 import '/data/datasources/supabase_evidence_data_source.dart';
 import '/data/datasources/supabase_habit_data_source.dart';
 import '/data/datasources/supabase_home_data_source.dart';
 import '/data/datasources/supabase_streak_data_source.dart';
 import '/data/datasources/supabase_trophy_data_source.dart';
+import '/data/datasources/verification_preferences.dart';
 import '/data/repositories/habit_repository.dart';
 import '/data/repositories/home_repository.dart';
 import '/data/repositories/streak_repository.dart';
@@ -17,6 +19,7 @@ import '/presentation/providers/habits_provider.dart';
 import '/presentation/providers/home_provider.dart';
 import '/presentation/providers/streaks_provider.dart';
 import '/presentation/providers/trophies_provider.dart';
+import '/presentation/providers/verification_settings_provider.dart';
 import '/services/notification_service.dart';
   
 class AppProviders extends StatelessWidget {
@@ -34,6 +37,7 @@ class AppProviders extends StatelessWidget {
 
     final dailySummaryDs = SupabaseDailySummaryDataSource(supabase);
     final trophyDs = SupabaseTrophyDataSource(supabase);
+    final evidenceDs = SupabaseEvidenceDataSource(supabase);
 
     return MultiProvider(
       providers: [
@@ -75,8 +79,11 @@ class AppProviders extends StatelessWidget {
           create: (_) => HomeProvider(
             HomeRepository(
               SupabaseHomeDataSource(supabase),
-              SupabaseEvidenceDataSource(supabase),
+              evidenceDs,
               dailySummaryDs,
+              // Para probar en local sin la Edge Function:
+              // verifier: GeminiDirectPhotoVerifier(evidenceDs),
+              verifier: GeminiEdgeFunctionPhotoVerifier(supabase.functions),
             ),
           ),
           update: (context, trophies, streaks, home) {
@@ -92,6 +99,13 @@ class AppProviders extends StatelessWidget {
 
         //Authprovider para manejar el estado de autenticación del usuario
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+
+        // Si el usuario aceptó que sus fotos se revisen con Gemini
+        ChangeNotifierProvider(
+          create: (_) =>
+              VerificationSettingsProvider(SharedPrefsVerificationPreferences())
+                ..load(),
+        ),
       ],
       child: child,
     );

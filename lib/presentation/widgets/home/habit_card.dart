@@ -18,7 +18,8 @@ class HabitCard extends StatelessWidget {
 
   final HabitCardData data;
 
-  /// Se llama al tocar el botón de completar mientras sigue pendiente.
+  /// Se llama al tocar el botón de completar mientras sigue pendiente, o el
+  /// cheque si ya se cumplió con foto (para volver a verla).
   final VoidCallback? onDone;
 
   /// Si tiene un panel abierto debajo. Las esquinas de abajo quedan rectas
@@ -49,7 +50,10 @@ class HabitCard extends StatelessWidget {
           Expanded(child: _TitleAndSubtitle(data: data)),
           const SizedBox(width: 12),
           data.isDone
-              ? _DoneMark(color: readableOnWhite(data.color))
+              ? _DoneMark(
+                  color: readableOnWhite(data.color),
+                  onPressed: data.hasEvidence ? onDone : null,
+                )
               : _DoneButton(onPressed: onDone),
         ],
       ),
@@ -94,26 +98,34 @@ class _TitleAndSubtitle extends StatelessWidget {
 
 /// Cheque relleno del color del hábito, para cuando ya se cumplió.
 /// Mide lo mismo que el botón de completar para que la fila no se mueva.
+/// Si el hábito tiene foto, al tocarlo se abre.
 class _DoneMark extends StatelessWidget {
-  const _DoneMark({required this.color});
+  const _DoneMark({required this.color, this.onPressed});
 
   final Color color;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       label: 'Hábito cumplido',
-      child: SizedBox.square(
-        dimension: 36,
-        child: Center(
-          child: Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            child: const Icon(
-              Icons.check_rounded,
-              size: 14,
-              color: HabuuColors.white100,
+      button: onPressed != null,
+      hint: onPressed == null ? null : 'Ver la foto de evidencia',
+      child: InkResponse(
+        onTap: onPressed,
+        radius: 24,
+        child: SizedBox.square(
+          dimension: 36,
+          child: Center(
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: const Icon(
+                Icons.check_rounded,
+                size: 14,
+                color: HabuuColors.white100,
+              ),
             ),
           ),
         ),

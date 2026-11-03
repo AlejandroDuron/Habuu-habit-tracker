@@ -7,7 +7,6 @@ import '../models/habit.dart';
 import '../models/habit_log.dart';
 import 'habit_data_source.dart';
 
-
 class SupabaseHabitDataSource implements HabitDataSource {
   SupabaseHabitDataSource(this._client);
 
@@ -15,8 +14,6 @@ class SupabaseHabitDataSource implements HabitDataSource {
 
   // Caché de categorías del usuario
   final Map<String, String> _categoryCache = {};
-
-
 
   static final _iconKeys = HabitIconAssets.byKey.keys.toList();
 
@@ -34,8 +31,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
 
   //Colores
 
-
-    static String _colorToHex(int argb) {
+  static String _colorToHex(int argb) {
     final r = (argb >> 16) & 0xFF;
     final g = (argb >> 8) & 0xFF;
     final b = argb & 0xFF;
@@ -43,7 +39,6 @@ class SupabaseHabitDataSource implements HabitDataSource {
         '${g.toRadixString(16).padLeft(2, '0')}'
         '${b.toRadixString(16).padLeft(2, '0')}';
   }
-
 
   static int _hexToColor(String hex) {
     final clean = hex.replaceFirst('#', '');
@@ -66,7 +61,6 @@ class SupabaseHabitDataSource implements HabitDataSource {
   ) {
     switch (repeat) {
       case HabitRepeat.diariamente:
-        
         return {
           'frequency': 'weekly',
           'days_of_week': [1, 2, 3, 4, 5, 6, 7],
@@ -85,7 +79,6 @@ class SupabaseHabitDataSource implements HabitDataSource {
           'day_of_month': days.isNotEmpty ? days.first : 1,
         };
       case null:
-      
         return {'frequency': null, 'days_of_week': null, 'day_of_month': null};
     }
   }
@@ -121,7 +114,6 @@ class SupabaseHabitDataSource implements HabitDataSource {
     final m = time.minute.toString().padLeft(2, '0');
     return '$h:$m:00';
   }
-
 
   static ({int hour, int minute}) _timeFromDb(String value) {
     final parts = value.split(':');
@@ -209,9 +201,9 @@ class SupabaseHabitDataSource implements HabitDataSource {
       _categoryCache[row['category_name'] as String] =
           row['category_id'] as String;
     }
-    }
+  }
 
-    Habit _rowToHabit(Map<String, dynamic> row) {
+  Habit _rowToHabit(Map<String, dynamic> row) {
     final freq = _frequencyFromDb(
       row['frequency'] as String?,
       row['days_of_week'] as List<dynamic>?,
@@ -338,7 +330,6 @@ class SupabaseHabitDataSource implements HabitDataSource {
   @override
   Future<void> deleteHabit(String id) {
     return _request('No se pudo eliminar el hábito', () async {
-
       final rows = await _client
           .from('habits')
           .update({'deleted_at': DateTime.now().toIso8601String()})
@@ -388,4 +379,4 @@ class SupabaseHabitDataSource implements HabitDataSource {
       throw Exception(errorMessage);
     }
   }
-  }
+}

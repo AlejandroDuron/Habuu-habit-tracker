@@ -18,7 +18,9 @@ class SupabaseDailySummaryDataSource implements DailySummaryDataSource {
         'all_done': true,
       }, onConflict: 'user_id,summary_date');
     } on PostgrestException catch (e) {
-      debugPrint('Supabase error al guardar resumen diario ${e.code}: ${e.message}');
+      debugPrint(
+        'Supabase error al guardar resumen diario ${e.code}: ${e.message}',
+      );
       throw const DailySummaryException(
         'No se pudo registrar el día como completado',
       );
@@ -68,9 +70,11 @@ class SupabaseDailySummaryDataSource implements DailySummaryDataSource {
       return rows.length;
     } on PostgrestException catch (e) {
       debugPrint(
-          'Supabase error al contar días completados ${e.code}: ${e.message}');
+        'Supabase error al contar días completados ${e.code}: ${e.message}',
+      );
       throw const DailySummaryException(
-          'No se pudo contar el total de días completados');
+        'No se pudo contar el total de días completados',
+      );
     } catch (e) {
       debugPrint('Error de conexión (daily_summaries total): $e');
       throw const DailySummaryException(

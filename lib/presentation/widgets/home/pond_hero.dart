@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../config/assets.dart';
 import '../../../config/theme/tokens.dart';
+import '../../models/home/frog_mood.dart';
 import '../shared/animated_frog.dart';
 
 /// Estanque con Froggy encima, sobre un fondo radial.
-/// Froggy salta si ya se cumplió algún hábito hoy; si no, duerme.
+/// Froggy duerme, salta al cumplir un hábito o descansa despierta.
 class PondHero extends StatelessWidget {
-  const PondHero({super.key, required this.frogAwake});
+  const PondHero({super.key, required this.mood});
 
-  final bool frogAwake;
+  final FrogMood mood;
 
   // Dónde va Froggy, como fracción de la imagen del estanque:
   // parada sobre las hojas del centro.
@@ -98,6 +99,25 @@ class PondHero extends StatelessWidget {
     final boxHeight = size * (1 + _hopHeight) + size * 0.1;
     final boxBottom = feetY + size * 0.125;
 
+    final (asset, motion, label) = switch (mood) {
+      FrogMood.sleeping => (
+        HomeAssets.frogSleeping,
+        FrogMotion.breathe,
+        'Froggy dormida',
+      ),
+      FrogMood.celebrating => (
+        HomeAssets.frogAwake,
+        FrogMotion.hop,
+        'Froggy celebrando',
+      ),
+      // Igual que la Froggy que descansa en la pantalla de rachas.
+      FrogMood.resting => (
+        HomeAssets.frogResting,
+        FrogMotion.breathe,
+        'Froggy despierta',
+      ),
+    };
+
     return Positioned(
       left: centerX - size / 2,
       top: boxBottom - boxHeight,
@@ -106,13 +126,13 @@ class PondHero extends StatelessWidget {
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
         child: AnimatedFrog(
-          key: ValueKey(frogAwake),
-          asset: frogAwake ? HomeAssets.frogAwake : HomeAssets.frogSleeping,
+          key: ValueKey(mood),
+          asset: asset,
           size: size,
-          motion: frogAwake ? FrogMotion.hop : FrogMotion.breathe,
+          motion: motion,
           hopHeight: _hopHeight,
           sideDistance: 0,
-          semanticLabel: frogAwake ? 'Froggy despierta' : 'Froggy dormida',
+          semanticLabel: label,
         ),
       ),
     );
