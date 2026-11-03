@@ -61,13 +61,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _PageData(
       title: 'Mantén tus rachas\npara ganar trofeos',
       subtitle: '¡Y haz que Froggy salte de alegría!',
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Image.asset(_Assets.streakCard, width: 230),
-          const SizedBox(height: 12),
-          Image.asset(_Assets.trophies, width: 320),
-        ],
+      content: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(_Assets.streakCard, width: 230),
+            const SizedBox(height: 12),
+            Image.asset(_Assets.trophies, width: 320),
+          ],
+        ),
       ),
       overlay: Positioned(
         right: 80,
