@@ -9,7 +9,6 @@ import 'package:habuu/presentation/widgets/auth/auth_button.dart';
 import 'package:habuu/presentation/widgets/auth/auth_scaffold.dart';
 import 'package:habuu/presentation/widgets/auth/auth_text_field.dart';
 import 'package:habuu/presentation/widgets/auth/social_login_buttons.dart';
-import 'package:habuu/presentation/widgets/shared/habuu_shell.dart';
 import 'package:habuu/utils/validators.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -23,14 +22,17 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordFocus = FocusNode();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
+  /// Si entra, el AuthGate muestra el home; aquí solo se manejan los errores.
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthProvider>();
@@ -39,14 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
       password: _passwordController.text,
     );
     if (!mounted) return;
-    if (!ok) {
-      showAuthError(context, auth.errorMessage);
-      return;
-    }
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HabuuShell()),
-      (route) => false,
-    );
+    if (!ok) showAuthError(context, auth.errorMessage);
   }
 
   @override
@@ -64,6 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 28),
         Form(
           key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -74,16 +70,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.email],
+                onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
               ),
               const SizedBox(height: 20),
               AuthTextField(
                 label: 'Contraseña',
                 controller: _passwordController,
+                focusNode: _passwordFocus,
                 hint: AuthTextField.passwordHint,
                 obscureText: true,
                 helperText: Validators.passwordRules,
-                validator: (v) =>
-                    Validators.notEmpty(v, 'Ingresa tu contraseña'),
+                validator: Validators.loginPassword,
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.password],
                 onFieldSubmitted: (_) => _login(),

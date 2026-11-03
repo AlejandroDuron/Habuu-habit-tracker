@@ -1,47 +1,41 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../data/models/app_user.dart';
+import '../../data/repositories/auth_error_messages.dart';
+import '../../data/repositories/auth_repository.dart';
 
 enum AuthStatus { unauthenticated, authenticated }
 
 /// Flujo que está esperando un código de verificación.
 enum VerificationFlow { register, passwordRecovery }
 
-/// Error con un mensaje listo para mostrar al usuario.
-class AuthFailure implements Exception {
-  const AuthFailure(this.message);
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
-/// Estado y acciones de autenticación, conectado a Supabase Auth.
+/// Estado y acciones de autenticación para las pantallas.
 ///
 /// - Registro: signUp -> código por correo -> verifyOTP (inicia sesión).
 /// - Recuperar contraseña: resetPasswordForEmail -> código -> verifyOTP
 ///   -> updateUser (nueva contraseña) -> signOut.
 /// - La sesión se guarda sola: al reabrir la app el usuario sigue dentro.
 class AuthProvider extends ChangeNotifier {
-  AuthProvider() {
-    _syncUser(_client.auth.currentUser);
-    _authSubscription = _client.auth.onAuthStateChange.listen((data) {
-      _syncUser(data.session?.user);
+  AuthProvider(this._repository) {
+    _syncUser(_repository.currentUser);
+    _authSubscription = _repository.authStateChanges().listen((user) {
+      _syncUser(user);
       notifyListeners();
     });
   }
 
-  static const _genericError = 'Algo salió mal. Inténtalo de nuevo.';
-
-  SupabaseClient get _client => Supabase.instance.client;
-  StreamSubscription<AuthState>? _authSubscription;
+  final AuthRepository _repository;
+  StreamSubscription<AppUser?>? _authSubscription;
 
   AuthStatus _status = AuthStatus.unauthenticated;
   VerificationFlow? _flow;
   bool _isLoading = false;
   bool _codeVerified = false;
+  bool _showWelcome = false;
   String? _errorMessage;
+  String? _userId;
   String? _userName;
   String? _userEmail;
 
@@ -53,8 +47,19 @@ class AuthProvider extends ChangeNotifier {
   /// Hay sesión iniciada. Durante la recuperación de contraseña Supabase abre
   /// una sesión temporal; mientras dure no cuenta como "dentro de la app".
   bool get isAuthenticated =>
-      _status == AuthStatus.authenticated &&
-      _flow != VerificationFlow.passwordRecovery;
+      _status == AuthStatus.authenticated && !isRecoveringPassword;
+
+  bool get isRecoveringPassword => _flow == VerificationFlow.passwordRecovery;
+
+  /// El registro mandó un código y falta ingresarlo.
+  bool get isWaitingForCode => _flow == VerificationFlow.register;
+
+  /// Cuenta recién creada: antes del home van "Cuenta verificada" y el
+  /// onboarding.
+  bool get showWelcome => _showWelcome;
+
+  /// Id del usuario dentro de la app, o null si no ha entrado.
+  String? get userId => isAuthenticated ? _userId : null;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -72,10 +77,10 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> login({required String email, required String password}) {
     return _run(() async {
-      await _client.auth.signInWithPassword(
-        email: email.trim(),
-        password: password,
-      );
+      // Si quedó una recuperación a medias, no debe bloquear la entrada.
+      _clearPending();
+      _showWelcome = false;
+      await _repository.signIn(email: email, password: password);
     });
   }
 
@@ -85,31 +90,21 @@ class AuthProvider extends ChangeNotifier {
     required String password,
   }) {
     return _run(() async {
-      final response = await _client.auth.signUp(
-        email: email.trim(),
-        password: password,
-        data: {'name': name.trim()},
+      _clearPending();
+      final outcome = await _welcomeAfter(
+        () => _repository.signUp(name: name, email: email, password: password),
       );
-
-      // Si el correo ya tiene una cuenta verificada, Supabase no da error
-      // (para no revelar qué correos existen) pero devuelve un usuario sin
-      // identidades y no envía ningún código.
-      final identities = response.user?.identities;
-      if (identities != null && identities.isEmpty) {
-        throw const AuthFailure(
-          'Este correo ya está registrado. Inicia sesión.',
-        );
+      if (outcome == SignUpOutcome.codeSent) {
+        _showWelcome = false;
+        _flow = VerificationFlow.register;
+        _pendingEmail = email.trim();
       }
-
-      _flow = VerificationFlow.register;
-      _pendingEmail = email.trim();
-      _codeVerified = false;
     });
   }
 
   Future<bool> requestPasswordReset(String email) {
     return _run(() async {
-      await _client.auth.resetPasswordForEmail(email.trim());
+      await _repository.requestPasswordReset(email);
       _flow = VerificationFlow.passwordRecovery;
       _pendingEmail = email.trim();
       _codeVerified = false;
@@ -127,20 +122,12 @@ class AuthProvider extends ChangeNotifier {
 
       switch (flow) {
         case VerificationFlow.register:
-          // Confirma la cuenta e inicia sesión.
-          await _client.auth.verifyOTP(
-            type: OtpType.signup,
-            email: email,
-            token: code,
+          await _welcomeAfter(
+            () => _repository.verifySignUpCode(email: email, code: code),
           );
           _clearPending();
         case VerificationFlow.passwordRecovery:
-          // Abre una sesión temporal que permite cambiar la contraseña.
-          await _client.auth.verifyOTP(
-            type: OtpType.recovery,
-            email: email,
-            token: code,
-          );
+          await _repository.verifyRecoveryCode(email: email, code: code);
           _codeVerified = true;
       }
     });
@@ -156,9 +143,9 @@ class AuthProvider extends ChangeNotifier {
 
       switch (flow) {
         case VerificationFlow.register:
-          await _client.auth.resend(type: OtpType.signup, email: email);
+          await _repository.resendSignUpCode(email);
         case VerificationFlow.passwordRecovery:
-          await _client.auth.resetPasswordForEmail(email);
+          await _repository.requestPasswordReset(email);
       }
     });
   }
@@ -168,20 +155,27 @@ class AuthProvider extends ChangeNotifier {
       if (!_codeVerified) {
         throw const AuthFailure('Primero verifica el código.');
       }
-      await _client.auth.updateUser(UserAttributes(password: newPassword));
+      await _repository.updatePassword(newPassword);
       // Cierra la sesión temporal: el usuario inicia sesión con la nueva.
-      await _client.auth.signOut();
+      await _repository.signOut();
       _clearPending();
     });
   }
 
   Future<void> logout() async {
     try {
-      await _client.auth.signOut();
+      await _repository.signOut();
     } catch (e) {
       debugPrint('AuthProvider logout error: $e');
     }
     _clearPending();
+    _showWelcome = false;
+    notifyListeners();
+  }
+
+  void finishWelcome() {
+    if (!_showWelcome) return;
+    _showWelcome = false;
     notifyListeners();
   }
 
@@ -205,13 +199,9 @@ class AuthProvider extends ChangeNotifier {
     } on AuthFailure catch (e) {
       _errorMessage = e.message;
       return false;
-    } on AuthException catch (e) {
-      debugPrint('AuthProvider AuthException: ${e.message}');
-      _errorMessage = _translateAuthException(e);
-      return false;
     } catch (e) {
       debugPrint('AuthProvider error: $e');
-      _errorMessage = _genericError;
+      _errorMessage = genericAuthError;
       return false;
     } finally {
       _isLoading = false;
@@ -219,43 +209,30 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  String _translateAuthException(AuthException e) {
-    final message = e.message.toLowerCase();
-
-    if (message.contains('invalid login credentials')) {
-      return 'Correo o contraseña incorrectos.';
+  /// Deja [showWelcome] encendido mientras corre [action], porque la sesión
+  /// nueva puede emitirse antes de que la llamada termine. Si falla, lo apaga.
+  Future<T> _welcomeAfter<T>(Future<T> Function() action) async {
+    _showWelcome = true;
+    try {
+      return await action();
+    } catch (_) {
+      _showWelcome = false;
+      rethrow;
     }
-    if (message.contains('email not confirmed')) {
-      return 'Tu cuenta aún no está verificada. Crea la cuenta de nuevo '
-          'para recibir otro código.';
-    }
-    if (message.contains('expired') || message.contains('invalid')) {
-      return 'Código incorrecto o vencido. Pide uno nuevo.';
-    }
-    if (message.contains('rate limit') ||
-        message.contains('only request this after')) {
-      return 'Espera un momento antes de pedir otro código.';
-    }
-    if (message.contains('different from the old password')) {
-      return 'La nueva contraseña debe ser distinta a la anterior.';
-    }
-    if (message.contains('password')) {
-      return 'La contraseña no cumple los requisitos.';
-    }
-    return _genericError;
   }
 
-  void _syncUser(User? user) {
+  void _syncUser(AppUser? user) {
     if (user == null) {
       _status = AuthStatus.unauthenticated;
+      _userId = null;
       _userName = null;
       _userEmail = null;
       return;
     }
     _status = AuthStatus.authenticated;
+    _userId = user.id;
     _userEmail = user.email;
-    _userName = (user.userMetadata?['name'] as String?) ??
-        _nameFromEmail(user.email ?? '');
+    _userName = user.name ?? _nameFromEmail(user.email);
   }
 
   void _clearPending() {

@@ -383,4 +383,14 @@ class HabitsProvider extends ChangeNotifier {
         ?.scheduleFor(habit)
         .catchError((e) => debugPrint('Error al programar recordatorio: $e'));
   }
+
+  /// Al cerrar sesión, los avisos de esta cuenta no deben seguir sonando
+  /// en el celular
+  Future<void> cancelAllReminders() async {
+    try {
+      await _reminders?.cancelAll();
+    } catch (e) {
+      debugPrint('Error al cancelar los recordatorios: $e');
+    }
+  }
 }

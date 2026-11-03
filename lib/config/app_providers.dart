@@ -10,6 +10,7 @@ import '/data/datasources/supabase_home_data_source.dart';
 import '/data/datasources/supabase_streak_data_source.dart';
 import '/data/datasources/supabase_trophy_data_source.dart';
 import '/data/datasources/verification_preferences.dart';
+import '/data/repositories/auth_repository.dart';
 import '/data/repositories/habit_repository.dart';
 import '/data/repositories/home_repository.dart';
 import '/data/repositories/streak_repository.dart';
@@ -21,14 +22,66 @@ import '/presentation/providers/streaks_provider.dart';
 import '/presentation/providers/trophies_provider.dart';
 import '/presentation/providers/verification_settings_provider.dart';
 import '/services/notification_service.dart';
-  
-class AppProviders extends StatelessWidget {
-  const AppProviders({super.key, required this.child, this.reminders});
 
+class AppProviders extends StatelessWidget {
+  const AppProviders({
+    super.key,
+    required this.authRepository,
+    required this.child,
+    this.reminders,
+    this.userDataScope,
+  });
+
+  final AuthRepository authRepository;
   final Widget child;
+
+  /// Pone los providers de datos del usuario alrededor de la app. Si es null
+  /// se usan los de Supabase; las pruebas pasan unos sin red.
+  final Widget Function(Widget app)? userDataScope;
 
   /// Servicio de notificaciones que se crea en main(). Si no se pasa, la
   /// app funciona igual pero sin recordatorios
+  final HabitReminderScheduler? reminders;
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        Provider<AuthRepository>.value(value: authRepository),
+
+        //Authprovider para manejar el estado de autenticación del usuario
+        ChangeNotifierProvider(create: (_) => AuthProvider(authRepository)),
+
+        // Si el usuario aceptó que sus fotos se revisen con Gemini
+        ChangeNotifierProvider(
+          create: (_) =>
+              VerificationSettingsProvider(SharedPrefsVerificationPreferences())
+                ..load(),
+        ),
+      ],
+      // Los datos son de un usuario. Al cambiar la sesión se crean de nuevo
+      // (y con ellos la navegación), así nadie ve en memoria lo del anterior.
+      child: Selector<AuthProvider, String?>(
+        selector: (_, auth) => auth.userId,
+        builder: (context, userId, app) => userId == null
+            ? app!
+            : KeyedSubtree(
+                key: ValueKey(userId),
+                child:
+                    userDataScope?.call(app!) ??
+                    _UserDataProviders(reminders: reminders, child: app!),
+              ),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Providers con los hábitos, rachas, trofeos y el home del usuario actual.
+class _UserDataProviders extends StatelessWidget {
+  const _UserDataProviders({required this.child, required this.reminders});
+
+  final Widget child;
   final HabitReminderScheduler? reminders;
 
   @override
@@ -95,16 +148,6 @@ class AppProviders extends StatelessWidget {
               ..setHabitsProvider(habits);
             return home;
           },
-        ),
-
-        //Authprovider para manejar el estado de autenticación del usuario
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-
-        // Si el usuario aceptó que sus fotos se revisen con Gemini
-        ChangeNotifierProvider(
-          create: (_) =>
-              VerificationSettingsProvider(SharedPrefsVerificationPreferences())
-                ..load(),
         ),
       ],
       child: child,

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:habuu/config/assets.dart';
 import 'package:habuu/config/theme/tokens.dart';
+import 'package:habuu/utils/auth_feedback.dart';
 
 /// Fila con los botones de Apple, Microsoft y Google.
-/// Por ahora no hacen nada: conecta los callbacks cuando exista el backend.
+/// El que no tenga callback avisa "Próximamente".
 class SocialLoginButtons extends StatelessWidget {
   const SocialLoginButtons({
     super.key,
@@ -68,8 +69,7 @@ class _SocialButton extends StatelessWidget {
           side: const BorderSide(color: HabuuColors.primary500, width: 1.5),
         ),
         child: InkWell(
-          // TODO: conectar con el backend (OAuth).
-          onTap: onTap ?? () {},
+          onTap: onTap ?? () => showAuthInfo(context, 'Próximamente'),
           child: SizedBox(
             width: 56,
             height: 52,

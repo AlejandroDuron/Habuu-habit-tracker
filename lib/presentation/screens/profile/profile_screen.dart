@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../config/assets.dart';
-import '../../../config/routes.dart';
 import '../../../config/theme/tokens.dart';
 import '../../models/profile/profile_menu_entry.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/habits_provider.dart';
 import '../../widgets/profile/pond_alert_card.dart';
 import '../../widgets/profile/pond_scroll_view.dart';
 import '../../widgets/profile/profile_menu.dart';
@@ -37,14 +37,16 @@ class ProfileScreen extends StatelessWidget {
   }
 
   /// La confirmación tapa la barra inferior, por eso va en el navigator raíz.
+  /// Al cerrar sesión no se navega: el AuthGate vuelve solo a la landing.
   void _confirmLogout(BuildContext context) {
     Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (routeContext) => LogoutConfirmScreen(
-          onConfirm: () {
-            routeContext.read<AuthProvider>().logout();
-            Navigator.of(routeContext)
-                .pushNamedAndRemoveUntil(AppRoutes.landing, (_) => false);
+          onConfirm: () async {
+            final habits = routeContext.read<HabitsProvider>();
+            final auth = routeContext.read<AuthProvider>();
+            await habits.cancelAllReminders();
+            await auth.logout();
           },
           onCancel: () => Navigator.of(routeContext).pop(),
         ),

@@ -5,27 +5,33 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '/config/app_providers.dart';
 import '/config/routes.dart';
-import '/presentation/screens/landing/landing_screen.dart';
+import '/data/datasources/secure_session_storage.dart';
+import '/data/repositories/supabase_auth_repository.dart';
+import '/presentation/screens/auth/auth_gate.dart';
 import '/services/notification_service.dart';
-import '/utils/dev_session.dart';
-
-final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es_ES');
 
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   await Supabase.initialize(
-    url: const String.fromEnvironment('SUPABASE_URL'),
+    url: supabaseUrl,
     publishableKey: const String.fromEnvironment('SUPABASE_KEY'),
+    authOptions: FlutterAuthClientOptions(
+      localStorage: SecureSessionStorage(
+        // La misma clave que usaría Supabase con SharedPreferences
+        persistSessionKey:
+            'sb-${Uri.parse(supabaseUrl).host.split('.').first}-auth-token',
+      ),
+    ),
   );
-  await signInForDevelopment(Supabase.instance.client);
-  
+  final authRepository = SupabaseAuthRepository(Supabase.instance.client.auth);
+
   final reminders = LocalNotificationService();
   try {
     await reminders.init();
   } catch (e) {
-
     debugPrint('No se pudieron iniciar las notificaciones: $e');
   }
 
@@ -36,7 +42,13 @@ Future<void> main() async {
     ),
   );
 
-  runApp(AppProviders(reminders: reminders, child: const HabuuApp()));
+  runApp(
+    AppProviders(
+      authRepository: authRepository,
+      reminders: reminders,
+      child: const HabuuApp(),
+    ),
+  );
 
   reminders.requestPermission().catchError(
     (e) => debugPrint('No se pudo pedir permiso de notificaciones: $e'),
@@ -49,7 +61,6 @@ class HabuuApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: _navigatorKey,
       title: 'Habuu',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -61,11 +72,7 @@ class HabuuApp extends StatelessWidget {
         ),
       ),
       routes: AppRoutes.routes,
-      home: LandingPage(
-        onLogin: () => _navigatorKey.currentState?.pushNamed(AppRoutes.login),
-        onCreateAccount: () =>
-            _navigatorKey.currentState?.pushNamed(AppRoutes.register),
-      ),
+      home: const AuthGate(),
     );
   }
 }

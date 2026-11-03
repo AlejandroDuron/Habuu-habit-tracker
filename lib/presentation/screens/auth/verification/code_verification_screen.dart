@@ -18,12 +18,15 @@ class CodeVerificationScreen extends StatefulWidget {
     super.key,
     required this.title,
     required this.buttonLabel,
-    required this.onVerified,
+    this.onVerified,
   });
 
   final String title;
   final String buttonLabel;
-  final void Function(BuildContext context) onVerified;
+
+  /// Si es null no navega: en el registro el código inicia sesión y el
+  /// AuthGate cambia de pantalla solo.
+  final void Function(BuildContext context)? onVerified;
 
   @override
   State<CodeVerificationScreen> createState() => _CodeVerificationScreenState();
@@ -37,7 +40,9 @@ class _CodeVerificationScreenState extends State<CodeVerificationScreen> {
 
   Future<void> _verify() async {
     if (_code.length != _codeLength) {
-      setState(() => _errorText = 'Ingresa los $_codeLength dígitos del código');
+      setState(
+        () => _errorText = 'Ingresa los $_codeLength dígitos del código',
+      );
       return;
     }
 
@@ -49,7 +54,7 @@ class _CodeVerificationScreenState extends State<CodeVerificationScreen> {
       setState(() => _errorText = auth.errorMessage ?? 'Código incorrecto');
       return;
     }
-    widget.onVerified(context);
+    widget.onVerified?.call(context);
   }
 
   Future<void> _resend() async {
@@ -61,9 +66,8 @@ class _CodeVerificationScreenState extends State<CodeVerificationScreen> {
       showAuthError(context, auth.errorMessage);
       return;
     }
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const CodeSentScreen()),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const CodeSentScreen()));
   }
 
   @override

@@ -14,6 +14,9 @@ abstract interface class HabitReminderScheduler {
 
   /// Quita todos los avisos de un hábito, por ejemplo al borrarlo
   Future<void> cancelFor(String habitId);
+
+  /// Quita los avisos de todos los hábitos, al cerrar sesión
+  Future<void> cancelAll();
 }
 
 class LocalNotificationService implements HabitReminderScheduler {
@@ -118,5 +121,11 @@ class LocalNotificationService implements HabitReminderScheduler {
     for (var i = 0; i < maxRemindersPerHabit; i++) {
       await _plugin.cancel(id: base + i);
     }
+  }
+
+  @override
+  Future<void> cancelAll() async {
+    if (!_ready) return;
+    await _plugin.cancelAll();
   }
 }

@@ -6,8 +6,10 @@ abstract final class Validators {
 
   static final _emailRegExp = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
-  static String? notEmpty(String? value,
-      [String message = 'Este campo es obligatorio']) {
+  static String? notEmpty(
+    String? value, [
+    String message = 'Este campo es obligatorio',
+  ]) {
     if (value == null || value.trim().isEmpty) return message;
     return null;
   }
@@ -19,11 +21,23 @@ abstract final class Validators {
     return null;
   }
 
-  
+  static const passwordMinLength = 8;
+
+  /// Al iniciar sesión solo se revisa el largo. Las demás reglas se piden al
+  /// crear la contraseña, no al escribirla de nuevo.
+  static String? loginPassword(String? value) {
+    final v = value ?? '';
+    if (v.isEmpty) return 'Ingresa tu contraseña';
+    if (v.length < passwordMinLength) {
+      return 'La contraseña tiene al menos $passwordMinLength caracteres';
+    }
+    return null;
+  }
+
   static String? password(String? value) {
     final v = value ?? '';
     if (v.isEmpty) return 'Ingresa una contraseña';
-    if (v.length < 8 ||
+    if (v.length < passwordMinLength ||
         !v.contains(RegExp(r'[A-Z]')) ||
         !v.contains(RegExp(r'[0-9]')) ||
         !v.contains(RegExp(r'[^A-Za-z0-9]'))) {
@@ -32,7 +46,6 @@ abstract final class Validators {
     return null;
   }
 
-  
   static String? Function(String?) confirmPassword(
     TextEditingController original,
   ) {

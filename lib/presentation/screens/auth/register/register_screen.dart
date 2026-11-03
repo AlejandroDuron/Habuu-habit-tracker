@@ -4,14 +4,11 @@ import 'package:habuu/utils/auth_feedback.dart';
 import 'package:provider/provider.dart';
 import 'package:habuu/config/assets.dart';
 import 'package:habuu/config/theme/tokens.dart';
-import 'package:habuu/presentation/screens/auth/verification/account_verified_screen.dart';
 import 'package:habuu/presentation/screens/auth/verification/code_verification_screen.dart';
-import 'package:habuu/presentation/screens/landing/onboarding_screen.dart';
 import 'package:habuu/presentation/widgets/auth/auth_button.dart';
 import 'package:habuu/presentation/widgets/auth/auth_scaffold.dart';
 import 'package:habuu/presentation/widgets/auth/auth_text_field.dart';
 import 'package:habuu/presentation/widgets/auth/social_login_buttons.dart';
-import 'package:habuu/presentation/widgets/shared/habuu_shell.dart';
 import 'package:habuu/utils/validators.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -27,6 +24,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _confirmFocus = FocusNode();
 
   @override
   void dispose() {
@@ -34,6 +34,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmFocus.dispose();
     super.dispose();
   }
 
@@ -50,41 +53,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       showAuthError(context, auth.errorMessage);
       return;
     }
+    // Sin confirmación de correo la cuenta ya inició sesión y el AuthGate
+    // muestra la bienvenida.
+    if (!auth.isWaitingForCode) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => CodeVerificationScreen(
+        builder: (_) => const CodeVerificationScreen(
           title: 'Ingresa código de\nconfirmación',
           buttonLabel: 'Verificar cuenta',
-          onVerified: _showVerified,
         ),
       ),
-    );
-  }
-
-  void _showVerified(BuildContext context) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => AccountVerifiedScreen(onFinished: _showOnboarding),
-      ),
-    );
-  }
-
-  /// Cuenta verificada al onboarding y luego al  home
-  void _showOnboarding(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (onboardingContext) => OnboardingScreen(
-          onFinish: () => _goHome(onboardingContext),
-        ),
-      ),
-      (route) => false,
-    );
-  }
-
-  void _goHome(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HabuuShell()),
-      (route) => false,
     );
   }
 
@@ -103,6 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         const SizedBox(height: 24),
         Form(
           key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -114,31 +93,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 textCapitalization: TextCapitalization.words,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.givenName],
+                onFieldSubmitted: (_) => _emailFocus.requestFocus(),
               ),
               const SizedBox(height: 20),
               AuthTextField(
                 label: 'Correo electrónico',
                 controller: _emailController,
+                focusNode: _emailFocus,
                 validator: Validators.email,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.email],
+                onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
               ),
               const SizedBox(height: 20),
               AuthTextField(
                 label: 'Contraseña',
                 controller: _passwordController,
+                focusNode: _passwordFocus,
                 hint: AuthTextField.passwordHint,
                 obscureText: true,
                 helperText: Validators.passwordRules,
                 validator: Validators.password,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.newPassword],
+                onFieldSubmitted: (_) => _confirmFocus.requestFocus(),
               ),
               const SizedBox(height: 20),
               AuthTextField(
                 label: 'Confirmar contraseña',
                 controller: _confirmController,
+                focusNode: _confirmFocus,
                 hint: AuthTextField.passwordHint,
                 obscureText: true,
                 validator: Validators.confirmPassword(_passwordController),

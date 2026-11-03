@@ -3,9 +3,9 @@ import 'package:habuu/config/theme/tokens.dart';
 
 /// Borde redondeado compartido por los campos y las casillas de código.
 OutlineInputBorder authInputBorder(Color color) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: color, width: 1.5),
-    );
+  borderRadius: BorderRadius.circular(12),
+  borderSide: BorderSide(color: color, width: 1.5),
+);
 
 /// Etiqueta + campo de texto + texto de ayuda opcional.
 class AuthTextField extends StatelessWidget {
@@ -22,6 +22,7 @@ class AuthTextField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.none,
     this.autofillHints,
     this.onFieldSubmitted,
+    this.focusNode,
   });
 
   final String label;
@@ -35,6 +36,7 @@ class AuthTextField extends StatelessWidget {
   final TextCapitalization textCapitalization;
   final Iterable<String>? autofillHints;
   final ValueChanged<String>? onFieldSubmitted;
+  final FocusNode? focusNode;
 
   /// Hint típico para los campos de contraseña.
   static const passwordHint = '****************';
@@ -54,6 +56,7 @@ class AuthTextField extends StatelessWidget {
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
+          focusNode: focusNode,
           obscureText: obscureText,
           validator: validator,
           keyboardType: keyboardType,
@@ -70,8 +73,10 @@ class AuthTextField extends StatelessWidget {
             hintStyle: HabuuText.captionMdMedium.copyWith(
               color: HabuuColors.grey400,
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
             enabledBorder: authInputBorder(HabuuColors.primary200),
             focusedBorder: authInputBorder(HabuuColors.primary500),
             errorBorder: authInputBorder(HabuuColors.error500),
