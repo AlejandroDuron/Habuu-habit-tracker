@@ -16,6 +16,7 @@ class HabitCardData {
     this.color = defaultColor,
     this.isDone = false,
     this.allowSkip = false,
+    this.hasEvidence = false,
   });
 
   factory HabitCardData.fromTodayHabit(TodayHabit today) {
@@ -28,6 +29,7 @@ class HabitCardData {
       color: colorFromHex(habit.color) ?? defaultColor,
       isDone: today.isDone,
       allowSkip: habit.allowSkip,
+      hasEvidence: today.log?.evidencePath != null,
     );
   }
 
@@ -49,6 +51,9 @@ class HabitCardData {
 
   /// Si el usuario puede omitir este hábito en lugar de completarlo.
   final bool allowSkip;
+
+  /// Si ya se cumplió con una foto que se puede volver a ver.
+  final bool hasEvidence;
 
   /// Si el hábito no tiene meta escrita, se dice cada cuánto toca.
   static String _scheduleLabel(HomeHabit habit) {

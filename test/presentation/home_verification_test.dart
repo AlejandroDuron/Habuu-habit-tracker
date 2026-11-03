@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:habuu/data/datasources/habit_photo_verifier.dart';
+import 'package:habuu/data/models/habit_log.dart';
 import 'package:habuu/data/models/home_habit.dart';
 import 'package:habuu/data/repositories/home_repository.dart';
 import 'package:habuu/data/repositories/trophy_repository.dart';
@@ -79,8 +80,8 @@ void main() {
   );
   final scanner = find.byKey(ScannerOverlay.overlayKey);
 
-  /// Abre el Home y el panel de la foto del hábito.
-  Future<void> openPanel(
+  /// Abre el Home con los hábitos ya cargados.
+  Future<void> pumpHome(
     WidgetTester tester, {
     bool reduceMotion = false,
   }) async {
@@ -112,9 +113,16 @@ void main() {
         ),
       ),
     );
-    // Primero carga los hábitos, después se abre el panel.
     await tester.pump();
     await tester.pump();
+  }
+
+  /// Abre el Home y el panel de la foto del hábito.
+  Future<void> openPanel(
+    WidgetTester tester, {
+    bool reduceMotion = false,
+  }) async {
+    await pumpHome(tester, reduceMotion: reduceMotion);
     await tester.tap(doneButton);
     await tester.pump(const Duration(milliseconds: 300));
   }
@@ -256,5 +264,74 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await _letScannerFinish(tester);
     expect(scanner, findsNothing);
+  });
+
+  group('hábito ya cumplido', () {
+    const path = 'user-1/h1/2026-11-02.jpg';
+    final doneMark = find.byWidgetPredicate(
+      (w) => w is Semantics && w.properties.label == 'Hábito cumplido',
+    );
+    final evidenceImage = find.byWidgetPredicate(
+      (w) => w is Image && w.semanticLabel == 'Foto de evidencia',
+    );
+
+    Future<void> markedWithPhoto() async {
+      await homeDs.saveLog(
+        habitId: 'h1',
+        day: DateTime(2026, 11, 2),
+        status: LogStatus.done,
+        evidencePath: path,
+      );
+    }
+
+    testWidgets('al tocarlo otra vez se ve la foto que se subió', (
+      tester,
+    ) async {
+      await markedWithPhoto();
+      evidence.photos[path] = _photo;
+      await pumpHome(tester);
+
+      await tester.tap(doneMark);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(evidenceImage, findsOneWidget);
+    });
+
+    testWidgets('recién verificada, la foto se ve sin volver a descargarla', (
+      tester,
+    ) async {
+      await openPanel(tester);
+      await home.submitEvidence('h1', _photo);
+      await tester.pump();
+      await _letScannerFinish(tester);
+      await tester.tap(find.text('Listo'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Si intentara descargarla, fallaría.
+      evidence.errorToThrow = Exception('sin red');
+      await tester.tap(doneMark);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(evidenceImage, findsOneWidget);
+    });
+
+    testWidgets('si no se puede descargar, avisa en vez de romperse', (
+      tester,
+    ) async {
+      await markedWithPhoto();
+      await pumpHome(tester);
+
+      await tester.tap(doneMark);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        find.text('No se pudo cargar la foto. Revisa tu conexión.'),
+        findsOneWidget,
+      );
+      expect(evidenceImage, findsNothing);
+    });
   });
 }

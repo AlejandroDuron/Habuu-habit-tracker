@@ -118,6 +118,9 @@ class HomeRepository {
     );
   }
 
+  /// Baja una foto de evidencia ya guardada.
+  Future<Uint8List> downloadEvidence(String path) => _evidence.download(path);
+
   /// Borra una foto que se subió pero no se usó en ningún registro.
   Future<void> discardEvidence(String path) => _deleteQuietly(path);
 

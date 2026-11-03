@@ -53,6 +53,12 @@ class HomeProvider extends ChangeNotifier {
   /// Froggy está despierta si hoy ya se cumplió al menos un hábito.
   bool get frogAwake => HomeRepository.isFrogAwake(_habits);
 
+  DateTime? _lastDoneAt;
+
+  /// Cuándo se cumplió el último hábito mientras la app estaba abierta.
+  /// Con esto Froggy sabe si le toca celebrar.
+  DateTime? get lastDoneAt => _lastDoneAt;
+
   // ── Carga ────────────────────────────────────────────────────────────────
 
   /// Trae los hábitos que tocan hoy.
@@ -91,6 +97,7 @@ class HomeProvider extends ChangeNotifier {
       final log = photo == null
           ? await _repository.markDone(habitId, today)
           : await _repository.markDoneWithPhoto(habitId, today, photo);
+      _remember(log, photo);
       _applyLog(habitId, log);
       return null;
     } catch (e) {
@@ -113,6 +120,9 @@ class HomeProvider extends ChangeNotifier {
     // Evalúa si el día quedó completo y registra en daily_summaries.
     final allDone = _habits.every((h) => h.isDone);
     _repository.checkAndMarkDayComplete(today, _habits);
+
+    // Omitir un hábito no cuenta como cumplirlo.
+    if (log.isDone) _lastDoneAt = DateTime.now();
 
     notifyListeners();
 
@@ -203,7 +213,7 @@ class HomeProvider extends ChangeNotifier {
     if (!_saving.add(habitId)) return null;
 
     try {
-      final error = await _saveEvidenceLog(habitId, check.photoPath);
+      final error = await _saveEvidenceLog(habitId, check);
       if (error == null) {
         _checks.remove(habitId);
         notifyListeners();
@@ -255,7 +265,7 @@ class HomeProvider extends ChangeNotifier {
 
     if (result != null && result.coincide) {
       // Aunque el panel ya esté cerrado, la foto sirve: se marca igual.
-      final saveError = await _saveEvidenceLog(habitId, check.photoPath);
+      final saveError = await _saveEvidenceLog(habitId, check);
       if (abandoned || !_isCurrent(habitId, check)) return;
       _checks[habitId] = saveError == null
           ? check.copyWith(
@@ -291,18 +301,59 @@ class HomeProvider extends ChangeNotifier {
   }
 
   /// Guarda el registro con la foto ya subida. Devuelve el error, si hubo.
-  Future<String?> _saveEvidenceLog(String habitId, String path) async {
+  Future<String?> _saveEvidenceLog(String habitId, EvidenceCheck check) async {
     try {
       final log = await _repository.markDoneWithEvidence(
         habitId,
         _clock(),
-        path,
+        check.photoPath,
       );
+      _remember(log, check.photo);
       _applyLog(habitId, log);
       return null;
     } catch (e) {
       return _messageFor(e);
     }
+  }
+
+  // ── Ver la foto de un hábito cumplido ────────────────────────────────────
+
+  /// Fotos que ya están en el teléfono, por ruta, para no bajarlas otra vez.
+  final Map<String, Uint8List> _photos = {};
+
+  /// La foto con la que se marcó el hábito. Si se subió desde este teléfono
+  /// en esta sesión, no se descarga.
+  ///
+  /// Lanza [HomeDataException] si no se pudo cargar.
+  Future<Uint8List> evidencePhotoFor(String habitId) async {
+    final path = _findLog(habitId)?.evidencePath;
+    if (path == null) throw const HomeDataException('Este hábito no tiene foto');
+
+    final saved = _photos[path];
+    if (saved != null) return saved;
+
+    try {
+      final photo = await _repository.downloadEvidence(path);
+      _photos[path] = photo;
+      return photo;
+    } catch (e) {
+      debugPrint('No se pudo descargar la foto: ${e.runtimeType}');
+      throw const HomeDataException(
+        'No se pudo cargar la foto. Revisa tu conexión.',
+      );
+    }
+  }
+
+  void _remember(HabitLog log, Uint8List? photo) {
+    final path = log.evidencePath;
+    if (path != null && photo != null) _photos[path] = photo;
+  }
+
+  HabitLog? _findLog(String habitId) {
+    for (final h in _habits) {
+      if (h.habit.id == habitId) return h.log;
+    }
+    return null;
   }
 
   bool _isCurrent(String habitId, EvidenceCheck check) =>

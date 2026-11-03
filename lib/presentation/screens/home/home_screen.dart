@@ -9,6 +9,8 @@ import '../../providers/home_provider.dart';
 import '../../providers/trophies_provider.dart';
 import '../../providers/verification_settings_provider.dart';
 import '../../widgets/home/evidence_panel.dart';
+import '../../widgets/home/evidence_photo_panel.dart';
+import '../../widgets/home/frog_mood_builder.dart';
 import '../../widgets/home/habit_section.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/home/today_card.dart';
@@ -152,21 +154,40 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     const HomeHeader(),
                     const SizedBox(height: 23),
-                    TodayCard(days: _buildDays(home.frogAwake), frogAwake: home.frogAwake),
+                    FrogMoodBuilder(
+                      awake: home.frogAwake,
+                      lastDoneAt: home.lastDoneAt,
+                      builder: (context, mood) => TodayCard(
+                        days: _buildDays(home.frogAwake),
+                        frogMood: mood,
+                      ),
+                    ),
                     const SizedBox(height: 23),
                     _HabitsContent(
                       home: home,
                       onDone: _togglePanel,
                       expandedHabitId: _expandedHabitId,
-                      panelBuilder: (card) => EvidencePanel(
-                        allowSkip: card.allowSkip,
-                        check: home.evidenceCheckFor(card.habitId),
-                        onSave: (photo) => _save(card, photo),
-                        onSkip: () => _complete(card),
-                        onRetry: () => home.retryVerification(card.habitId),
-                        onSaveAnyway: () => _saveWithoutVerification(card),
-                        onFinish: _closePanel,
-                      ),
+                      panelBuilder: (card) {
+                        final check = home.evidenceCheckFor(card.habitId);
+                        // Ya cumplido y sin una revisión en curso: solo se
+                        // ve la foto.
+                        if (card.isDone && check == null) {
+                          return EvidencePhotoPanel(
+                            loadPhoto: () =>
+                                home.evidencePhotoFor(card.habitId),
+                            onClose: _closePanel,
+                          );
+                        }
+                        return EvidencePanel(
+                          allowSkip: card.allowSkip,
+                          check: check,
+                          onSave: (photo) => _save(card, photo),
+                          onSkip: () => _complete(card),
+                          onRetry: () => home.retryVerification(card.habitId),
+                          onSaveAnyway: () => _saveWithoutVerification(card),
+                          onFinish: _closePanel,
+                        );
+                      },
                     ),
                   ],
                 ),
