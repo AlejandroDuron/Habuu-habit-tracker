@@ -8,9 +8,9 @@ import '../../widgets/profile/back_title_header.dart';
 import '../../widgets/profile/pond_scroll_view.dart';
 import '../../widgets/shared/verification_dialogs.dart';
 
-/// Opciones de seguridad. Por ahora, si las fotos se revisan con Gemini.
-class SecurityScreen extends StatelessWidget {
-  const SecurityScreen({super.key});
+/// Preferencias del usuario, como si las fotos se revisan con Gemini.
+class PreferencesScreen extends StatelessWidget {
+  const PreferencesScreen({super.key});
 
   Future<void> _onChanged(BuildContext context, bool enable) async {
     final settings = context.read<VerificationSettingsProvider>();
@@ -33,7 +33,7 @@ class SecurityScreen extends StatelessWidget {
     return PondScrollView(
       children: [
         BackTitleHeader(
-          title: 'Seguridad',
+          title: 'Preferencias',
           onBack: () => Navigator.of(context).maybePop(),
         ),
         const SizedBox(height: 31),
@@ -55,7 +55,7 @@ class SecurityScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'Antes de marcar un hábito, la foto se envía a Gemini '
-                '(Google) para revisar que tenga que ver con el hábito. '
+                'para revisar que tenga que ver con el hábito. '
                 'Si la quitas, cualquier foto sirve.',
                 style: HabuuText.bodySmMedium.copyWith(
                   color: HabuuColors.grey700,

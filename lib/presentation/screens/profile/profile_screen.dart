@@ -10,8 +10,8 @@ import '../../widgets/profile/pond_alert_card.dart';
 import '../../widgets/profile/pond_scroll_view.dart';
 import '../../widgets/profile/profile_menu.dart';
 import 'logout_confirm_screen.dart';
+import 'preferences_screen.dart';
 import 'profile_mock_data.dart';
-import 'security_screen.dart';
 import 'user_screen.dart';
 
 /// Pestaña "Perfil": aviso de la ranita y menú de configuración.
@@ -31,9 +31,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _openSecurity(BuildContext context) {
+  void _openPreferences(BuildContext context) {
     Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const SecurityScreen()));
+        .push(MaterialPageRoute(builder: (_) => const PreferencesScreen()));
   }
 
   /// La confirmación tapa la barra inferior, por eso va en el navigator raíz.
@@ -76,14 +76,14 @@ class ProfileScreen extends StatelessWidget {
                 label: 'Usuario',
                 onTap: () => _openUser(context),
               ),
-              const ProfileMenuEntry(
+              ProfileMenuEntry(
                 icon: ProfileAssets.tools,
                 label: 'Preferencias',
+                onTap: () => _openPreferences(context),
               ),
-              ProfileMenuEntry(
+              const ProfileMenuEntry(
                 icon: ProfileAssets.shield,
                 label: 'Seguridad',
-                onTap: () => _openSecurity(context),
               ),
             ],
             [
