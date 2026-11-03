@@ -1,4 +1,4 @@
-# 🐸 Habuu: tracker de hábitos personales
+# Habuu: tracker de hábitos personales
 
 Habuu es una app móvil hecha en **Flutter** para crear hábitos, marcarlos cada día y no perder la racha. La rana de Habuu te acompaña: celebra cuando cumples, te recuerda tus hábitos con notificaciones y te da trofeos por tu constancia.
 
@@ -152,5 +152,5 @@ Si en la consola salen mensajes como `Error simulado de conexión`, es normal: v
 ---
 ## Uso de IA
 
-Durante el desarrollo usamos asistentes de IA como apoyo para revisar código, escribir pruebas, depurar errores e implementar los recordatorios con notificaciones locales. El detalle está en la declaración de cada integrante en el documento final.
+Durante el desarrollo usamos asistentes de IA como apoyo para revisar código, como consultora, escribir pruebas y depurar errores. El detalle está en la declaración de cada integrante en el documento final.
 
