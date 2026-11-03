@@ -1,10 +1,6 @@
 /// Trofeo tal como viene de la base de datos (tabla `trophies`).
 class Trophy {
-  const Trophy({
-    required this.id,
-    required this.name,
-    this.key,
-  });
+  const Trophy({required this.id, required this.name, this.key});
 
   /// `trophy_id` — clave de texto (ej: "day_completed").
   final String id;
@@ -26,10 +22,7 @@ class Trophy {
 
 /// Trofeo ganado por el usuario: une el trofeo con la fecha en que lo ganó.
 class EarnedTrophy {
-  const EarnedTrophy({
-    required this.trophy,
-    required this.earnedAt,
-  });
+  const EarnedTrophy({required this.trophy, required this.earnedAt});
 
   final Trophy trophy;
   final DateTime earnedAt;

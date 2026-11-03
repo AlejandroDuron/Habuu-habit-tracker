@@ -9,6 +9,9 @@ abstract interface class EvidenceDataSource {
     required Uint8List bytes,
   });
 
+  /// Descarga una foto subida.
+  Future<Uint8List> download(String path);
+
   /// Borra una foto subida.
   Future<void> delete(String path);
 }

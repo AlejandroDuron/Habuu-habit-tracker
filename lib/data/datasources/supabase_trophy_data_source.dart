@@ -12,10 +12,7 @@ class SupabaseTrophyDataSource implements TrophyDataSource {
   @override
   Future<List<Trophy>> getAllTrophies() {
     return _request('No se pudieron cargar los trofeos', () async {
-      final rows = await _client
-          .from('trophies')
-          .select()
-          .order('trophy_name');
+      final rows = await _client.from('trophies').select().order('trophy_name');
 
       return rows.map(Trophy.fromMap).toList();
     });
@@ -79,10 +76,7 @@ class SupabaseTrophyDataSource implements TrophyDataSource {
           .eq('trophy_id', trophyId)
           .single();
 
-      return EarnedTrophy.fromMap(
-        earnedRow,
-        Trophy.fromMap(trophyRow),
-      );
+      return EarnedTrophy.fromMap(earnedRow, Trophy.fromMap(trophyRow));
     });
   }
 
@@ -92,10 +86,7 @@ class SupabaseTrophyDataSource implements TrophyDataSource {
     return user.id;
   }
 
-  Future<T> _request<T>(
-    String errorMessage,
-    Future<T> Function() query,
-  ) async {
+  Future<T> _request<T>(String errorMessage, Future<T> Function() query) async {
     try {
       return await query();
     } on PostgrestException catch (e) {
@@ -103,9 +94,7 @@ class SupabaseTrophyDataSource implements TrophyDataSource {
       throw TrophyDataException(errorMessage);
     } catch (e) {
       debugPrint('Error de conexión (trofeos): $e');
-      throw TrophyDataException(
-        'Revisa tu conexión e inténtalo de nuevo',
-      );
+      throw TrophyDataException('Revisa tu conexión e inténtalo de nuevo');
     }
   }
 }
