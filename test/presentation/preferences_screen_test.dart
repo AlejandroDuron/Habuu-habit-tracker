@@ -1,4 +1,4 @@
-// pruebas del interruptor de verificación en Perfil > Seguridad y de que la
+// pruebas del interruptor de verificación en Perfil > Preferencias y de que la
 // preferencia se guarde en SharedPreferences
 
 import 'package:flutter/material.dart';
@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:habuu/data/datasources/verification_preferences.dart';
 import 'package:habuu/presentation/providers/verification_settings_provider.dart';
-import 'package:habuu/presentation/screens/profile/security_screen.dart';
+import 'package:habuu/presentation/screens/profile/preferences_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,7 +24,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
         value: settings,
-        child: const MaterialApp(home: SecurityScreen()),
+        child: const MaterialApp(home: PreferencesScreen()),
       ),
     );
     return settings;

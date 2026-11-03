@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../data/datasources/verification_preferences.dart';
 
 /// Guarda si el usuario aceptó que sus fotos se verifiquen. Lo usan el Home
-/// (para preguntar la primera vez) y Perfil → Seguridad.
+/// (para preguntar la primera vez) y Perfil > Preferencias.
 class VerificationSettingsProvider extends ChangeNotifier {
   VerificationSettingsProvider(this._preferences);
 

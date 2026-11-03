@@ -15,7 +15,7 @@ Future<bool> showVerificationConsentDialog(BuildContext context) async {
         'Para revisar que la foto tenga que ver con el hábito, la enviamos a '
         'Gemini, un servicio de Google que la analiza.\n\n'
         'Evita fotos con personas o datos personales. Puedes cambiar esto '
-        'cuando quieras en Perfil > Seguridad.',
+        'cuando quieras en Perfil > Preferencias.',
       ),
       actions: [
         TextButton(
