@@ -12,12 +12,15 @@ import 'habit_photo_verifier.dart';
 class GeminiEdgeFunctionPhotoVerifier implements HabitPhotoVerifier {
   GeminiEdgeFunctionPhotoVerifier(
     this._functions, {
-    this.timeout = const Duration(seconds: 30),
+    this.timeout = const Duration(seconds: 45),
   });
 
   final FunctionsClient _functions;
 
-  /// La función le da 20 s a Gemini; aquí se espera un poco más.
+  /// La función le da 25 s a Gemini, pero antes puede tardar en arrancar
+  /// (la primera llamada después de un rato) y en bajar la foto. Si la app
+  /// se rinde antes que la función, el usuario ve "se agotó el tiempo"
+  /// aunque Gemini sí iba a responder.
   final Duration timeout;
 
   static const functionName = 'verify-habit-photo';
