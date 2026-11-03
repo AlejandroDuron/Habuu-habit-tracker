@@ -25,8 +25,7 @@ abstract final class HomeAssets {
   static const camera = 'assets/icons/home/camera.svg';
 }
 
-/// Íconos que se pueden elegir para un hábito.
-/// La clave es lo que se guarda en la columna icon_key.
+
 abstract final class HabitIconAssets {
   static const run = 'assets/icons/habits/run.svg';
   static const water = 'assets/icons/habits/water.svg';

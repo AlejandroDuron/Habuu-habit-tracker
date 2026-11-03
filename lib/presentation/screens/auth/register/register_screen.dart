@@ -69,7 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  /// Cuenta verificada -> onboarding -> home.
+  /// Cuenta verificada al onboarding y luego al  home
   void _showOnboarding(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(

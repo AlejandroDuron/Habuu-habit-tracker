@@ -30,7 +30,6 @@ class CodeVerificationScreen extends StatefulWidget {
 }
 
 class _CodeVerificationScreenState extends State<CodeVerificationScreen> {
-  /// Debe coincidir con la longitud configurada en Supabase (por defecto 6).
   static const _codeLength = 6;
 
   String _code = '';

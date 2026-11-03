@@ -28,7 +28,6 @@ class AuthButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: HabuuColors.primary500,
             foregroundColor: HabuuColors.white100,
-            // Mismo aspecto mientras carga (no se ve "gris" de desactivado).
             disabledBackgroundColor: HabuuColors.primary500,
             disabledForegroundColor: HabuuColors.white100,
             elevation: 0,

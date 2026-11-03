@@ -49,7 +49,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final auth = context.read<AuthProvider>();
     final ok = await auth.changePassword(_newController.text);
     if (!mounted) return;
-    if (!ok) return; // TODO: mostrar auth.errorMessage
+    if (!ok) return;
     Navigator.of(context).pushNamedAndRemoveUntil(
       AppRoutes.login,
       (route) => route.isFirst,

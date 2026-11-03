@@ -19,7 +19,6 @@ class CodeInput extends StatefulWidget {
   final int length;
   final bool hasError;
 
-  /// Se llama en cada cambio con el código actual (puede estar incompleto).
   final ValueChanged<String> onChanged;
 
   @override
@@ -41,7 +40,6 @@ class _CodeInputState extends State<CodeInput> {
         List.generate(widget.length, (_) => TextEditingController());
     _nodes = List.generate(widget.length, (i) {
       final node = FocusNode();
-      // Al enfocar una casilla con dígito, se selecciona para reemplazarlo.
       node.addListener(() {
         if (node.hasFocus) {
           final c = _controllers[i];
