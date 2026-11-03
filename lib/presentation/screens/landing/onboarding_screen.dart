@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ───────────────────────── Assets ─────────────────────────
 class _Assets {
   static const base = 'assets/images/onboarding';
   static const habitsCard = '$base/habits_card.png';
@@ -12,7 +11,6 @@ class _Assets {
   static const duck = '$base/duck.png';
 }
 
-// ───────────────────────── Colores ─────────────────────────
 class _C {
   static const darkGreen = Color(0xFF11553A);
   static const titleGreen = Color(0xFF2F7A5A);
@@ -22,7 +20,6 @@ class _C {
   static const dotInactive = Color(0xFFA9D3C0);
 }
 
-// ───────────────────────── Pantalla ─────────────────────────
 class OnboardingScreen extends StatefulWidget {
   /// Se ejecuta al pulsar "Omitir" o "¡Empezemos!".
   final VoidCallback onFinish;
