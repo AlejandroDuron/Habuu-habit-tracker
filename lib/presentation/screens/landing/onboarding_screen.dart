@@ -30,8 +30,6 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const double _sheetHeight = 340;
-
   final _controller = PageController();
   int _current = 0;
 
@@ -39,21 +37,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _PageData(
       title: 'Construye hábitos que\ntransformen tu día',
       subtitle: 'Pequeñas acciones, grandes cambios',
-      content: LayoutBuilder(
-        builder: (_, c) => ClipRect(
-          // la imagen trae espacio transparente abajo
-          child: Align(
-            alignment: Alignment.topCenter,
-            heightFactor: .86,
-            child: Image.asset(_Assets.habitsCard, width: c.maxWidth * .85),
-          ),
+      content: ClipRect(
+        child: Align(
+          alignment: Alignment.topCenter,
+          heightFactor: .86,
+          child: Image.asset(_Assets.habitsCard, width: 320),
         ),
       ),
-      overlay: Positioned(
-        left: 24,
-        bottom: _sheetHeight - 50,
-        child: Image.asset(_Assets.froggyClipboard, width: 145),
-      ),
+      overlay: Image.asset(_Assets.froggyClipboard, width: 145),
+      overlayLeft: 24,
+      overlayWidth: 145,
+      overlayBottomOffset: 50,
     ),
     _PageData(
       title: 'Mantén tus rachas\npara ganar trofeos',
@@ -69,24 +63,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ],
         ),
       ),
-      overlay: Positioned(
-        right: 80,
-        bottom: _sheetHeight - 40,
-        child: Image.asset(_Assets.duck, width: 62),
-      ),
+      overlay: Image.asset(_Assets.duck, width: 62),
+      overlayRight: 80,
+      overlayWidth: 62,
+      overlayBottomOffset: 40,
     ),
     _PageData(
       title: 'Establece\nrecordatorios',
       subtitle: '¡Sino Froggy se ponga triste!',
-      content: LayoutBuilder(
-        builder: (_, c) =>
-            Image.asset(_Assets.remindersCard, width: c.maxWidth * .85),
-      ),
-      overlay: Positioned(
-        right: 24,
-        bottom: _sheetHeight - 50,
-        child: Image.asset(_Assets.froggySurprised, width: 128),
-      ),
+      content: Image.asset(_Assets.remindersCard, width: 320),
+      overlay: Image.asset(_Assets.froggySurprised, width: 128),
+      overlayRight: 24,
+      overlayWidth: 128,
+      overlayBottomOffset: 50,
     ),
   ];
 
@@ -114,148 +103,162 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final page = _pages[_current];
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [_C.bgTop, _C.bgBottom],
-          ),
-        ),
-        child: Stack(
-          children: [
-            // Contenido deslizable (ilustración + overlay)
-            PageView.builder(
-              controller: _controller,
-              itemCount: _pages.length,
-              onPageChanged: (i) => setState(() => _current = i),
-              itemBuilder: (_, i) => Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned.fill(
-                    bottom: _sheetHeight,
-                    child: SafeArea(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final sheetHeight = (constraints.maxHeight * .52)
+              .clamp(280.0, 340.0)
+              .toDouble();
+
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [_C.bgTop, _C.bgBottom],
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  bottom: sheetHeight,
+                  child: PageView.builder(
+                    controller: _controller,
+                    itemCount: _pages.length,
+                    onPageChanged: (i) => setState(() => _current = i),
+                    itemBuilder: (_, i) => SafeArea(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: _pages[i].content,
+                        child: LayoutBuilder(
+                          builder: (context, contentConstraints) => SizedBox(
+                            width: contentConstraints.maxWidth,
+                            height: contentConstraints.maxHeight,
+                            child: FittedBox(
+                              alignment: Alignment.topCenter,
+                              fit: BoxFit.scaleDown,
+                              child: _pages[i].content,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            // Panel blanco fijo
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: _sheetHeight,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(32, 28, 32, 0),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(32)),
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: Column(
-                    children: [
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: Column(
-                          key: ValueKey(_current),
-                          children: [
-                            Text(
-                              page.title,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 26,
-                                height: 1.1,
-                                fontWeight: FontWeight.w800,
-                                color: _C.titleGreen,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              page.subtitle,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: _C.subtitle,
-                              ),
-                            ),
-                          ],
-                        ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: sheetHeight,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(32),
                       ),
-                      const Spacer(),
-                      _Dots(current: _current, total: _pages.length),
-                      const SizedBox(height: 28),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: FilledButton(
-                          onPressed: _next,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _C.darkGreen,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: Text(
-                            _isLast ? '¡Empezemos!' : 'Siguiente',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      // Mantiene el espacio para que el botón no salte de lugar
-                      Visibility(
-                        visible: !_isLast,
-                        maintainSize: true,
-                        maintainAnimation: true,
-                        maintainState: true,
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: OutlinedButton(
-                            onPressed: widget.onFinish,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: _C.darkGreen,
-                              side: const BorderSide(color: _C.darkGreen),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: const Text('Omitir',
-                                style: TextStyle(
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 250),
+                            child: Column(
+                              key: ValueKey(_current),
+                              children: [
+                                Text(
+                                  page.title,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 26,
+                                    height: 1.1,
+                                    fontWeight: FontWeight.w800,
+                                    color: _C.titleGreen,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  page.subtitle,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
                                     fontSize: 16,
-                                    fontWeight: FontWeight.w700)),
+                                    fontWeight: FontWeight.w600,
+                                    color: _C.subtitle,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          _Dots(current: _current, total: _pages.length),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: FilledButton(
+                              onPressed: _next,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _C.darkGreen,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                _isLast ? '¡Empezemos!' : 'Siguiente',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Visibility(
+                            visible: !_isLast,
+                            maintainSize: true,
+                            maintainAnimation: true,
+                            maintainState: true,
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: OutlinedButton(
+                                onPressed: widget.onFinish,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: _C.darkGreen,
+                                  side: const BorderSide(color: _C.darkGreen),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Omitir',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const Spacer(flex: 2),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                Positioned(
+                  left: page.overlayLeft,
+                  right: page.overlayRight,
+                  bottom: sheetHeight - page.overlayBottomOffset,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: SizedBox(
+                      key: ValueKey(_current),
+                      width: page.overlayWidth,
+                      child: page.overlay,
+                    ),
+                  ),
+                ),
+              ],
             ),
-
-            // Mascota / patito que sobresale del panel (cambia con la página)
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: Stack(
-                key: ValueKey(_current),
-                clipBehavior: Clip.none,
-                children: [page.overlay],
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -264,12 +267,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 class _PageData {
   final String title, subtitle;
   final Widget content;
-  final Positioned overlay;
+  final Widget overlay;
+  final double? overlayLeft;
+  final double? overlayRight;
+  final double overlayWidth;
+  final double overlayBottomOffset;
   const _PageData({
     required this.title,
     required this.subtitle,
     required this.content,
     required this.overlay,
+    this.overlayLeft,
+    this.overlayRight,
+    required this.overlayWidth,
+    required this.overlayBottomOffset,
   });
 }
 
