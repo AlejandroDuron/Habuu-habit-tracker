@@ -3,11 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../../../config/theme/tokens.dart';
 import '../../../data/models/habit.dart';
+import '../../../utils/dates.dart';
+import '../../models/habits_list/weekly_habit_data.dart';
 import '../../providers/habits_provider.dart';
 import '../../widgets/habits_list/habit_filter_chips.dart';
 import '../../widgets/habits_list/habits_list_header.dart';
 import '../../widgets/habits_list/habits_list_view.dart';
 import '../../widgets/habits_list/period_segment.dart';
+import '../../widgets/habits_list/weekly_habits_list_view.dart';
 import '../../widgets/shared/add_habit_fab.dart';
 import 'habit_form_screen.dart';
 
@@ -153,6 +156,24 @@ class HabitsListScreen extends StatelessWidget {
 
   // ── UI ─────────────────────────────────────────────────────────────────────
 
+  Widget _buildWeekly(BuildContext context, HabitsProvider provider) {
+    final habits = provider.filteredHabits;
+    final weekStart = weekStartOf(DateTime.now());
+
+    return WeeklyHabitsListView(
+      isLoading: provider.isLoading,
+      habits: [
+        for (final habit in habits)
+          WeeklyHabitData.fromHabit(
+            habit,
+            provider.weekStatusesFor(habit.id),
+            weekStart: weekStart,
+          ),
+      ],
+      onTap: (i) => _openEdit(context, habits[i]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Leemos el provider una sola vez por build; los cambios de filtro
@@ -198,13 +219,15 @@ class HabitsListScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
               Expanded(
-                child: HabitsListView(
-                  habits: provider.filteredHabits,
-                  isLoading: provider.isLoading,
-                  onEdit: (habit) => _openEdit(context, habit),
-                  onDelete: (habit) => _deleteHabit(context, habit),
-                  onMove: (habit) => _moveHabit(context, habit),
-                ),
+                child: provider.periodFilter == HabitPeriodFilter.week
+                    ? _buildWeekly(context, provider)
+                    : HabitsListView(
+                        habits: provider.filteredHabits,
+                        isLoading: provider.isLoading,
+                        onEdit: (habit) => _openEdit(context, habit),
+                        onDelete: (habit) => _deleteHabit(context, habit),
+                        onMove: (habit) => _moveHabit(context, habit),
+                      ),
               ),
             ],
           ),

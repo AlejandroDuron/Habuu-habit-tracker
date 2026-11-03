@@ -66,3 +66,7 @@ abstract final class ProfileAssets {
   static const calendar = 'assets/icons/profile/calendar.svg';
   static const arrowDown = 'assets/icons/profile/nav_arrow_down.svg';
 }
+
+abstract final class HabitsListAssets {
+  static const check = 'assets/icons/habits_list/check.svg';
+}

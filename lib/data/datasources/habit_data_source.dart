@@ -18,6 +18,8 @@ abstract interface class HabitDataSource {
   /// Devuelve un mapa de habit_id → LogStatus para los registros de [day].
   /// Solo incluye hábitos que tienen un log ese día.
   Future<Map<String, LogStatus>> getLogStatusesForDay(DateTime day);
+
+  Future<List<HabitLog>> getLogsBetween(DateTime start, DateTime end);
 }
 
 /// Error propio para cuando se busca un hábito que no existe

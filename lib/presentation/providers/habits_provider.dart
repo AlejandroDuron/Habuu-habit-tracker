@@ -5,6 +5,7 @@ import '../../data/models/habit.dart';
 import '../../data/models/habit_log.dart';
 import '../../data/repositories/habit_repository.dart';
 import '../../services/notification_service.dart';
+import '../../utils/dates.dart';
 import 'trophies_provider.dart';
 
 //Enums para filtrar la lista de hábitos
@@ -49,6 +50,8 @@ class HabitsProvider extends ChangeNotifier {
 
   Map<String, LogStatus> _logStatuses = {};
 
+  Map<String, Map<DateTime, LogStatus>> _weekStatuses = {};
+
  
   HabitPeriodFilter _periodFilter = HabitPeriodFilter.all;
   HabitChipFilter _chipFilter = HabitChipFilter.all;
@@ -64,6 +67,9 @@ class HabitsProvider extends ChangeNotifier {
 
 
   Map<String, LogStatus> get logStatuses => Map.unmodifiable(_logStatuses);
+
+  Map<DateTime, LogStatus> weekStatusesFor(String habitId) =>
+      Map.unmodifiable(_weekStatuses[habitId] ?? const {});
 
   HabitPeriodFilter get periodFilter => _periodFilter;
   HabitChipFilter get chipFilter => _chipFilter;
@@ -142,7 +148,7 @@ class HabitsProvider extends ChangeNotifier {
       }).toList(),
 
       HabitPeriodFilter.week => all.where((h) {
-        final weekStart = today.subtract(Duration(days: today.weekday - 1));
+        final weekStart = weekStartOf(today);
         final weekEnd = weekStart.add(const Duration(days: 6));
         final created = DateTime(
           h.createdAt.year,
@@ -217,12 +223,15 @@ class HabitsProvider extends ChangeNotifier {
 
     try {
       // Carga hábitos y logs del día en paralelo
+      final now = DateTime.now();
       final results = await Future.wait([
         _repository.getHabits(),
-        _repository.getLogStatusesForDay(DateTime.now()),
+        _repository.getLogStatusesForDay(now),
+        _repository.getWeekLogStatuses(now),
       ]);
       _habits = results[0] as List<Habit>;
       _logStatuses = results[1] as Map<String, LogStatus>;
+      _weekStatuses = results[2] as Map<String, Map<DateTime, LogStatus>>;
 
       // Reprogramamos los avisos de todos los hábitos al abrir la app.
       // Así, si se cambió algo desde otro celular, los avisos quedan al día
@@ -241,7 +250,13 @@ class HabitsProvider extends ChangeNotifier {
   /// Recarga solo los logs del día
   Future<void> reloadLogStatuses() async {
     try {
-      _logStatuses = await _repository.getLogStatusesForDay(DateTime.now());
+      final now = DateTime.now();
+      final results = await Future.wait([
+        _repository.getLogStatusesForDay(now),
+        _repository.getWeekLogStatuses(now),
+      ]);
+      _logStatuses = results[0] as Map<String, LogStatus>;
+      _weekStatuses = results[1] as Map<String, Map<DateTime, LogStatus>>;
       notifyListeners();
     } catch (e) {
       debugPrint('Error al recargar logs: $e');
