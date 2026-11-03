@@ -37,6 +37,7 @@ class Habit {
     required this.reminderTime,
     required this.goalPerDay,
     required this.createdAt,
+    this.goal,
     this.repeat,
     this.days = const {},
     this.allDay = false,
@@ -81,7 +82,10 @@ class Habit {
   /// Hora específica del recordatorio. Null si los recordatorios están desactivados.
   final ({int hour, int minute})? reminderTime;
 
-  /// Cuántas veces al día hay que cumplirlo.
+  /// Descripción libre de la meta del hábito (ej. "30 minutos", "5 km").
+  final String? goal;
+
+  /// Cuántas veces al día hay que cumplirlo (siempre 1 cuando se usa [goal]).
   final int goalPerDay;
   final bool allowSkip;
   final bool remindersEnabled;
@@ -90,8 +94,11 @@ class Habit {
 
   bool get isFrequent => type == HabitType.frecuente;
 
-  String get goalLabel =>
-      goalPerDay == 1 ? '1 Vez o más al día' : '$goalPerDay veces al día';
+  /// Texto para mostrar en tarjetas. Prioriza [goal] si está definido.
+  String get goalLabel {
+    if (goal != null && goal!.trim().isNotEmpty) return goal!.trim();
+    return goalPerDay == 1 ? '1 Vez o más al día' : '$goalPerDay veces al día';
+  }
 
   Habit copyWith({
     String? id,
@@ -107,6 +114,8 @@ class Habit {
     bool? allDay,
     ({int hour, int minute})? reminderTime,
     bool clearReminderTime = false,
+    String? goal,
+    bool clearGoal = false,
     int? goalPerDay,
     bool? allowSkip,
     bool? remindersEnabled,
@@ -126,6 +135,7 @@ class Habit {
       reminderTime: clearReminderTime
           ? null
           : (reminderTime ?? this.reminderTime),
+      goal: clearGoal ? null : (goal ?? this.goal),
       goalPerDay: goalPerDay ?? this.goalPerDay,
       allowSkip: allowSkip ?? this.allowSkip,
       remindersEnabled: remindersEnabled ?? this.remindersEnabled,
@@ -147,6 +157,7 @@ class Habit {
       'allDay': allDay,
       'reminderHour': reminderTime?.hour,
       'reminderMinute': reminderTime?.minute,
+      'goal': goal,
       'goalPerDay': goalPerDay,
       'allowSkip': allowSkip,
       'remindersEnabled': remindersEnabled,
@@ -174,6 +185,7 @@ class Habit {
       reminderTime: (reminderHour != null && reminderMinute != null)
           ? (hour: reminderHour, minute: reminderMinute)
           : null,
+      goal: map['goal'] as String?,
       goalPerDay: (map['goalPerDay'] as num).toInt(),
       allowSkip: map['allowSkip'] as bool? ?? false,
       remindersEnabled: map['remindersEnabled'] as bool? ?? true,

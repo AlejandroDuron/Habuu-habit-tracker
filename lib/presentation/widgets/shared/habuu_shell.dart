@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/trophies_provider.dart';
 import '../../screens/habits/habits_list_screen.dart';
 import '../../screens/home/home_screen.dart';
 import '../../screens/profile/profile_screen.dart';
 import '../../screens/streaks/streaks_screen.dart';
 import '../../widgets/shared/navbar.dart';
+import '../../widgets/thophies/trophy_earned_toast.dart';
  
 class HabuuShell extends StatefulWidget {
   const HabuuShell({super.key});
@@ -64,9 +67,28 @@ class _HabuuShellState extends State<HabuuShell> {
       },
       child: Scaffold(
         extendBody: false,
-        body: IndexedStack(
-          index: _selectedTab.index,
-          children: _pages,
+        body: Stack(
+          children: [
+            IndexedStack(
+              index: _selectedTab.index,
+              children: _pages,
+            ),
+
+            // Toast global de trofeo ganado — visible en cualquier pestaña.
+            // HomeScreen tiene el suyo propio; aquí lo mostramos cuando el
+            // usuario no está en Home para que nunca pase desapercibido.
+            if (_selectedTab != HabuuTab.home)
+              Consumer<TrophiesProvider>(
+                builder: (_, trophies, __) {
+                  if (trophies.newlyEarned.isEmpty) return const SizedBox.shrink();
+                  return TrophyEarnedToast(
+                    key: ValueKey(trophies.newlyEarned.first.earnedAt),
+                    trophy: trophies.newlyEarned.first,
+                    onDismissed: trophies.clearNewlyEarned,
+                  );
+                },
+              ),
+          ],
         ),
         bottomNavigationBar: HabuuNavbar(
           selected: _selectedTab,

@@ -7,25 +7,40 @@ import '../../../config/assets.dart';
 import '../../../config/theme/tokens.dart';
 import '../shared/animated_frog.dart';
 
-/// Cuánto dura la animación de "despertar" antes de pasar a descanso.
-const _kWakeDuration = Duration(seconds: 10);
+/// Cuánto dura cada fase temporal antes de volver a descanso.
+const _kCelebrationDuration = Duration(seconds: 10);
+const _kMilestoneDuration = Duration(seconds: 10);
 
-/// Tres estados posibles para Froggy en la pantalla de rachas.
+/// Racha mínima para mostrar la animación de hito (one_month.png).
+const _kMilestoneStreak = 7;
+
+/// Estados de Froggy en la pantalla de Rachas.
+///
+/// El orden refleja la prioridad: milestone > hopping > resting > sleeping.
 enum _FrogState {
-  /// Sin racha y sin hábitos completados hoy → duerme.
+  /// Sin racha ni hábitos completados hoy → duerme.
   sleeping,
 
-  /// Acaba de completar un hábito / tiene racha → salta (máx. 10 s).
+  /// Tiene racha o completó al menos un hábito → descansa despierta.
+  resting,
+
+  /// Acaba de completar un hábito → salta (igual que celebrating en el Home).
   hopping,
 
-  /// Pasaron los 10 s de salto → descansa animada con habuu_resting.
-  resting,
+  /// Racha ≥ 7 días recién detectada → muestra one_month.png saltando.
+  milestone,
 }
 
 /// Header de la pantalla de Rachas.
 ///
-/// - Sin racha y sin hábito completado hoy → Froggy duerme.
-/// - Completó un hábito hoy o tiene racha → Froggy salta 10 s y luego descansa.
+/// Usa la misma lógica de estados que [PondHero] en el Home:
+/// - Sin racha ni hábito hoy  → Froggy duerme (breathe).
+/// - Completó un hábito hoy   → salta 10 s (hop) y luego descansa (breathe).
+/// - Racha ≥ 7 días           → muestra one_month.png saltando 10 s y luego
+///                              vuelve al descanso.
+///
+/// Si se cumplen varias condiciones a la vez, [milestone] tiene prioridad
+/// sobre [hopping]; ambas vuelven a [resting] tras su temporizador.
 class StreakHeader extends StatefulWidget {
   const StreakHeader({
     super.key,
@@ -43,25 +58,43 @@ class StreakHeader extends StatefulWidget {
 }
 
 class _StreakHeaderState extends State<StreakHeader> {
-  _FrogState _frogState = _FrogState.sleeping;
-  Timer? _wakeTimer;
+  _FrogState _state = _FrogState.sleeping;
+  Timer? _timer;
+
+  // ── Ciclo de vida ─────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
-    _applyFrogAwake(widget.frogAwake);
+    _applyState(widget.frogAwake, widget.streakCount, initial: true);
   }
 
   @override
-  void didUpdateWidget(covariant StreakHeader oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Solo reacciona cuando frogAwake cambia de false → true.
-    if (!oldWidget.frogAwake && widget.frogAwake) {
+  void didUpdateWidget(covariant StreakHeader old) {
+    super.didUpdateWidget(old);
+
+    final awakeBecameTrue = !old.frogAwake && widget.frogAwake;
+    final streakHitMilestone =
+        old.streakCount < _kMilestoneStreak &&
+        widget.streakCount >= _kMilestoneStreak;
+
+    // Milestone tiene prioridad: se dispara si la racha acaba de cruzar
+    // el umbral de 7 días, independientemente de si frogAwake cambió.
+    if (streakHitMilestone) {
+      _startMilestone();
+      return;
+    }
+
+    // Si frogAwake acaba de activarse, salta como en el Home.
+    if (awakeBecameTrue) {
       _startHopping();
-    } else if (!widget.frogAwake && _frogState != _FrogState.sleeping) {
-      // Si pierde la racha y no tiene hábitos → vuelve a dormir.
+      return;
+    }
+
+    // Si pierde la racha y no tiene hábitos → vuelve a dormir.
+    if (!widget.frogAwake && widget.streakCount == 0) {
       _cancelTimer();
-      setState(() => _frogState = _FrogState.sleeping);
+      if (mounted) setState(() => _state = _FrogState.sleeping);
     }
   }
 
@@ -71,42 +104,103 @@ class _StreakHeaderState extends State<StreakHeader> {
     super.dispose();
   }
 
-  void _applyFrogAwake(bool awake) {
-    if (awake) {
-      _startHopping();
+  // ── Transiciones de estado ────────────────────────────────────────────────
+
+  /// Decide el estado inicial sin iniciar temporizadores innecesarios.
+  void _applyState(bool awake, int streak, {bool initial = false}) {
+    if (streak >= _kMilestoneStreak) {
+      // En la carga inicial, si ya tiene racha ≥ 7, celebra el hito.
+      if (initial) {
+        _startMilestone();
+      } else {
+        _state = _FrogState.resting;
+      }
+    } else if (awake) {
+      if (initial) {
+        _startHopping();
+      } else {
+        _state = _FrogState.resting;
+      }
     } else {
-      _frogState = _FrogState.sleeping;
+      _state = _FrogState.sleeping;
     }
   }
 
   void _startHopping() {
     _cancelTimer();
-    setState(() => _frogState = _FrogState.hopping);
-    _wakeTimer = Timer(_kWakeDuration, () {
-      if (mounted) setState(() => _frogState = _FrogState.resting);
+    if (mounted) setState(() => _state = _FrogState.hopping);
+    _timer = Timer(_kCelebrationDuration, () {
+      if (mounted) setState(() => _state = _FrogState.resting);
+    });
+  }
+
+  void _startMilestone() {
+    _cancelTimer();
+    if (mounted) setState(() => _state = _FrogState.milestone);
+    _timer = Timer(_kMilestoneDuration, () {
+      if (mounted) setState(() => _state = _FrogState.resting);
     });
   }
 
   void _cancelTimer() {
-    _wakeTimer?.cancel();
-    _wakeTimer = null;
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  // ── Textos según estado ───────────────────────────────────────────────────
+
+  static const _textDark = HabuuColors.success800;
+
+  String get _message => switch (_state) {
+        _FrogState.sleeping => 'Completa un hábito para despertar a Froggy',
+        _FrogState.hopping => '¡Froggy ha despertado, sigue así!',
+        _FrogState.resting => '¡Sigue así, vas muy bien!',
+        _FrogState.milestone =>
+          '¡${widget.streakCount} días de racha! ¡Increíble!',
+      };
+
+  // ── Construcción del widget Froggy ────────────────────────────────────────
+
+  Widget _buildFrog() {
+    return switch (_state) {
+      _FrogState.sleeping => AnimatedFrog(
+          key: const ValueKey(_FrogState.sleeping),
+          asset: HomeAssets.frogSleeping,
+          size: 160,
+          motion: FrogMotion.breathe,
+          semanticLabel: 'Froggy dormida',
+        ),
+      _FrogState.hopping => AnimatedFrog(
+          key: const ValueKey(_FrogState.hopping),
+          asset: HomeAssets.frogAwake,
+          size: 160,
+          motion: FrogMotion.hop,
+          semanticLabel: 'Froggy despierta',
+        ),
+      _FrogState.resting => AnimatedFrog(
+          key: const ValueKey(_FrogState.resting),
+          asset: HomeAssets.frogResting,
+          size: 160,
+          motion: FrogMotion.breathe,
+          semanticLabel: 'Froggy descansando',
+        ),
+      _FrogState.milestone => AnimatedFrog(
+          key: const ValueKey(_FrogState.milestone),
+          asset: HomeAssets.frogMilestone,
+          size: 160,
+          motion: FrogMotion.hop,
+          semanticLabel: 'Froggy celebrando racha de ${widget.streakCount} días',
+        ),
+    };
   }
 
   // ── UI ────────────────────────────────────────────────────────────────────
 
-  static const Color _textDark = HabuuColors.success800;
-
-  String get _message => switch (_frogState) {
-        _FrogState.sleeping =>
-          'Completa un hábito para despertar a Froggy',
-        _FrogState.hopping => '¡Froggy ha despertado, sigue así!',
-        _FrogState.resting => '¡Sigue así, vas muy bien!',
-      };
-
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    final isAwakeOrResting = _frogState != _FrogState.sleeping;
+    final showDecorativeImage =
+        _state == _FrogState.hopping || _state == _FrogState.resting;
 
     return Container(
       width: double.infinity,
@@ -116,7 +210,7 @@ class _StreakHeaderState extends State<StreakHeader> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Froggy centrada.
+          // Froggy centrada con transición suave entre estados.
           Center(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 400),
@@ -144,9 +238,7 @@ class _StreakHeaderState extends State<StreakHeader> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.streakCount == 1
-                          ? 'Día de racha'
-                          : 'Días de racha',
+                      widget.streakCount == 1 ? 'Día de racha' : 'Días de racha',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 32,
                         height: 1.1,
@@ -167,8 +259,8 @@ class _StreakHeaderState extends State<StreakHeader> {
                   ],
                 ),
               ),
-              // Patito decorativo solo cuando está activa/descansando.
-              if (isAwakeOrResting)
+              // Imagen decorativa solo cuando está activa/descansando.
+              if (showDecorativeImage)
                 Image.asset(
                   'assets/images/calendar/streak_7.png',
                   height: 64,
@@ -179,31 +271,5 @@ class _StreakHeaderState extends State<StreakHeader> {
         ],
       ),
     );
-  }
-
-  Widget _buildFrog() {
-    return switch (_frogState) {
-      _FrogState.sleeping => AnimatedFrog(
-          key: const ValueKey(_FrogState.sleeping),
-          asset: HomeAssets.frogSleeping,
-          size: 160,
-          motion: FrogMotion.breathe,
-          semanticLabel: 'Froggy dormida',
-        ),
-      _FrogState.hopping => AnimatedFrog(
-          key: const ValueKey(_FrogState.hopping),
-          asset: HomeAssets.frogAwake,
-          size: 160,
-          motion: FrogMotion.hop,
-          semanticLabel: 'Froggy despierta',
-        ),
-      _FrogState.resting => AnimatedFrog(
-          key: const ValueKey(_FrogState.resting),
-          asset: HomeAssets.frogResting,
-          size: 160,
-          motion: FrogMotion.breathe,
-          semanticLabel: 'Froggy descansando',
-        ),
-    };
   }
 }

@@ -91,7 +91,7 @@ class LocalNotificationService implements HabitReminderScheduler {
       final date = reminder.firstDate;
       await _plugin.zonedSchedule(
         id: reminder.id,
-        title: '🐸 ${habit.name}',
+        title: habit.name,
         body: 'Meta de hoy: ${habit.goalLabel.toLowerCase()}',
         scheduledDate: tz.TZDateTime(
           tz.local,

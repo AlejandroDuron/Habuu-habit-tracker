@@ -74,7 +74,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       RegExp(r'^[\p{L}\p{N} ]+$', unicode: true);
 
   static final RegExp _hasLetter = RegExp(r'\p{L}', unicode: true);
-  static final RegExp _onlyDigits = RegExp(r'^\d+$');
 
   @override
   void initState() {
@@ -82,11 +81,26 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     _nameController = TextEditingController();
     _goalController = TextEditingController();
     _loadValues(widget.habit);
+
+    // Precarga las categorías personalizadas que ya existen en los hábitos
+    // del usuario, para que el diálogo no las ofrezca como nuevas.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final fromHabits = context.read<HabitsProvider>().availableCategories;
+      final predefinedLabels =
+          HabitCategory.values.map((c) => c.label.toLowerCase()).toSet();
+      for (final cat in fromHabits) {
+        if (!predefinedLabels.contains(cat.toLowerCase()) &&
+            !_customCategories.any((c) => c.toLowerCase() == cat.toLowerCase())) {
+          _customCategories.add(cat);
+        }
+      }
+    });
   }
 
   void _loadValues(Habit? habit) {
     _nameController.text = habit?.name ?? '';
-    _goalController.text = '${habit?.goalPerDay ?? 1}';
+    _goalController.text = habit?.goal ?? '';
     _type = habit?.type ?? HabitType.frecuente;
     _category = habit?.category ?? HabitCategory.values.first;
     _categoryLabel = habit?.categoryLabel ?? _category.label;
@@ -134,11 +148,11 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   String? _validateGoal(String? value) {
     final text = (value ?? '').trim();
     if (text.isEmpty) return 'Escribe la meta diaria';
-    if (!_onlyDigits.hasMatch(text)) return 'Solo se permiten números enteros';
-    final goal = int.tryParse(text);
-    if (goal == null) return 'Escribe un número válido';
-    if (goal < 1) return 'La meta tiene que ser al menos 1';
-    if (goal > 99) return 'La meta máxima es 99 veces al día';
+    if (text.length < 2) return 'Escribe al menos 2 caracteres';
+    if (text.length > 50) return 'Máximo 50 caracteres';
+    if (!_hasLetter.hasMatch(text) && !RegExp(r'\d').hasMatch(text)) {
+      return 'La meta debe incluir letras o números';
+    }
     return null;
   }
 
@@ -201,10 +215,32 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
 
   // ── Categoría personalizada ────────────────────────────────────────────────
 
+  /// Devuelve true si el nombre ya existe como categoría:
+  /// - predefinida en el enum (Salud, Hogar, etc.)
+  /// - personalizada creada en esta sesión
+  /// - ya usada en algún hábito existente del usuario (viene del provider)
   bool _categoryExists(String name) {
     final lower = name.toLowerCase();
-    return HabitCategory.values.any((c) => c.label.toLowerCase() == lower) ||
-        _customCategories.any((c) => c.toLowerCase() == lower);
+
+    // 1. Predefinidas en código
+    if (HabitCategory.values.any((c) => c.label.toLowerCase() == lower)) {
+      return true;
+    }
+
+    // 2. Creadas en esta sesión
+    if (_customCategories.any((c) => c.toLowerCase() == lower)) {
+      return true;
+    }
+
+    // 3. Ya usadas en hábitos del usuario (cargadas en el provider)
+    final existingFromHabits = context
+        .read<HabitsProvider>()
+        .availableCategories;
+    if (existingFromHabits.any((c) => c.toLowerCase() == lower)) {
+      return true;
+    }
+
+    return false;
   }
 
   Future<void> _showAddCategoryDialog() async {
@@ -253,7 +289,8 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       reminderTime: _reminderTime != null
           ? (hour: _reminderTime!.hour, minute: _reminderTime!.minute)
           : null,
-      goalPerDay: int.parse(_goalController.text.trim()),
+      goal: _goalController.text.trim().isEmpty ? null : _goalController.text.trim(),
+      goalPerDay: 1,
       allowSkip: _allowSkip,
       remindersEnabled: _remindersEnabled,
       createdAt: widget.habit?.createdAt ?? DateTime.now(),
@@ -529,21 +566,21 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
                       controller: _goalController,
                       focusNode: _goalFocus,
                       validator: _validateGoal,
-                      keyboardType: TextInputType.number,
+                      keyboardType: TextInputType.text,
+                      textCapitalization: TextCapitalization.sentences,
                       textInputAction: TextInputAction.done,
                       inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(2),
+                        LengthLimitingTextInputFormatter(50),
                       ],
                       style: HabuuText.bodyLgRegular.copyWith(
                         color: HabuuTextColors.primaryBlack,
                       ),
                       decoration: _inputDecoration(
+                        hint: 'Ej. 30 minutos, 5 km, 1 vaso',
                         prefixIcon: const Icon(
                           Icons.edit_outlined,
                           color: HabuuIconColors.black,
                         ),
-                        suffixText: 'vez o más al día',
                         padding: 16,
                       ),
                     ),

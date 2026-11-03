@@ -56,8 +56,9 @@ class SupabaseTrophyDataSource implements TrophyDataSource {
       if (existing != null) return null;
 
       // Inserta el registro de trofeo ganado.
+      // user_id se omite intencionalmente: la columna tiene DEFAULT auth.uid()
+      // y la política RLS valida que solo el usuario autenticado pueda insertar.
       await _client.from('trophies_per_user').insert({
-        'user_id': userId,
         'trophy_id': trophyId,
         'earned_at': DateTime.now().toIso8601String(),
       });

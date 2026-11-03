@@ -242,6 +242,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
       allDay: false,
       reminderTime: reminderTime != null ? _timeFromDb(reminderTime) : null,
       goalPerDay: (row['goal_per_day'] as num?)?.toInt() ?? 1,
+      goal: row['goal'] as String?,
       allowSkip: (row['allow_skip'] as bool?) ?? false,
       // Sin fila en reminders = sin recordatorio
       remindersEnabled: (reminder?['activate_reminder'] as bool?) ?? false,
@@ -285,6 +286,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
             'type': _typeToDb(habit.type),
             'allow_skip': habit.allowSkip,
             'goal_per_day': habit.goalPerDay,
+            'goal': habit.goal,
             'created_date': isoDate(habit.createdAt),
             ...freqData,
           })
@@ -315,6 +317,7 @@ class SupabaseHabitDataSource implements HabitDataSource {
             'type': _typeToDb(habit.type),
             'allow_skip': habit.allowSkip,
             'goal_per_day': habit.goalPerDay,
+            'goal': habit.goal,
             ...freqData,
           })
           .eq('habit_id', habit.id)

@@ -20,6 +20,9 @@ abstract final class HomeAssets {
   static const frogSleeping = 'assets/icons/pet_frog/froggy_sleeping.png';
   static const frogResting = 'assets/images/calendar/habuu_resting.png';
 
+  /// Imagen de trofeo que aparece al alcanzar un hito de racha (7 días).
+  static const frogMilestone = 'assets/images/calendar/one_month.png';
+
   static const add = 'assets/icons/home/add.svg';
   static const done = 'assets/icons/home/done.svg';
   static const camera = 'assets/icons/home/camera.svg';
