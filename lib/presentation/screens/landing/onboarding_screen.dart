@@ -158,86 +158,108 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                     child: SafeArea(
                       top: false,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 250),
-                            child: Column(
-                              key: ValueKey(_current),
-                              children: [
-                                Text(
-                                  page.title,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 26,
-                                    height: 1.1,
-                                    fontWeight: FontWeight.w800,
-                                    color: _C.titleGreen,
-                                  ),
+                      child: LayoutBuilder(
+                        builder: (context, panelConstraints) =>
+                            SingleChildScrollView(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minHeight: panelConstraints.maxHeight,
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  page.subtitle,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: _C.subtitle,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          _Dots(current: _current, total: _pages.length),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: FilledButton(
-                              onPressed: _next,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: _C.darkGreen,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    AnimatedSwitcher(
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
+                                      child: Column(
+                                        key: ValueKey(_current),
+                                        children: [
+                                          Text(
+                                            page.title,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 26,
+                                              height: 1.1,
+                                              fontWeight: FontWeight.w800,
+                                              color: _C.titleGreen,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            page.subtitle,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: _C.subtitle,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    _Dots(
+                                      current: _current,
+                                      total: _pages.length,
+                                    ),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 48,
+                                      child: FilledButton(
+                                        onPressed: _next,
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: _C.darkGreen,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _isLast ? '¡Empezemos!' : 'Siguiente',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Visibility(
+                                      visible: !_isLast,
+                                      maintainSize: true,
+                                      maintainAnimation: true,
+                                      maintainState: true,
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        height: 48,
+                                        child: OutlinedButton(
+                                          onPressed: widget.onFinish,
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: _C.darkGreen,
+                                            side: const BorderSide(
+                                              color: _C.darkGreen,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Omitir',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              child: Text(
-                                _isLast ? '¡Empezemos!' : 'Siguiente',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
                             ),
-                          ),
-                          Visibility(
-                            visible: !_isLast,
-                            maintainSize: true,
-                            maintainAnimation: true,
-                            maintainState: true,
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: OutlinedButton(
-                                onPressed: widget.onFinish,
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: _C.darkGreen,
-                                  side: const BorderSide(color: _C.darkGreen),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Omitir',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ),
