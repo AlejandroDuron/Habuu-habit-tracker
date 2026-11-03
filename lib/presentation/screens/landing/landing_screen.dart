@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,8 +11,8 @@ class LandingPage extends StatelessWidget {
   final VoidCallback? onCreateAccount;
 
   static const double _designWidth = 440;
+  static const double _contentMaxWidth = 440;
 
-  // Colores medidos de la imagen del diseño.
   static const Color _green = Color(0xFF165239);
   static const Color _ink = Color(0xFF050505);
   static const List<Color> _sky = [
@@ -26,11 +28,14 @@ class LandingPage extends StatelessWidget {
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final double s = constraints.maxWidth / _designWidth;
+          final scale = math
+              .min(
+                constraints.maxWidth / _designWidth,
+                constraints.maxHeight / 640,
+              )
+              .clamp(.75, 1.0);
 
           return Container(
-            width: double.infinity,
-            height: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -40,109 +45,159 @@ class LandingPage extends StatelessWidget {
               ),
             ),
             child: Stack(
-              clipBehavior: Clip.none,
               children: [
-                // Ilustración inferior (hongos, iris, totoras).
                 Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: Image.asset(
-                    'assets/images/landing/scenery.png',
-                    width: constraints.maxWidth,
-                    fit: BoxFit.fitWidth,
-                    filterQuality: FilterQuality.high,
+                  child: IgnorePointer(
+                    child: Image.asset(
+                      'assets/images/landing/scenery.png',
+                      width: constraints.maxWidth,
+                      fit: BoxFit.fitWidth,
+                      filterQuality: FilterQuality.high,
+                    ),
                   ),
                 ),
+                SafeArea(
+                  child: LayoutBuilder(
+                    builder: (context, safeConstraints) {
+                      final contentWidth = math.min(
+                        safeConstraints.maxWidth,
+                        _contentMaxWidth,
+                      );
+                      final buttonWidth = math.min(
+                        contentWidth - 48 * scale,
+                        220 * scale,
+                      );
 
-                // Libélulas laterales.
-                _sprite('assets/images/landing/dragonfly_left.png', s, left: 6, top: 396, w: 54),
-                _sprite('assets/images/landing/dragonfly_right.png', s, left: 372, top: 404, w: 42),
-
-                // Título.
-                Positioned(
-                  top: 75 * s,
-                  left: 0,
-                  right: 0,
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Deja que ',
-                      children: const [
-                        TextSpan(
-                          text: 'Habuu',
-                          style: TextStyle(color: _green),
+                      return Center(
+                        child: SizedBox(
+                          width: contentWidth,
+                          height: safeConstraints.maxHeight,
+                          child: SingleChildScrollView(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 24 * scale,
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(height: 64 * scale),
+                                  Text.rich(
+                                    TextSpan(
+                                      text: 'Deja que ',
+                                      children: const [
+                                        TextSpan(
+                                          text: 'Habuu',
+                                          style: TextStyle(color: _green),
+                                        ),
+                                        TextSpan(
+                                          text: ' te\nayude a mejorar\ntus habitos',
+                                        ),
+                                      ],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 40 * scale,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.1,
+                                      letterSpacing: -0.3 * scale,
+                                      color: _ink,
+                                    ),
+                                  ),
+                                  SizedBox(height: 80 * scale),
+                                  SizedBox(
+                                    width: buttonWidth + 40 * scale,
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Column(
+                                          children: [
+                                            SizedBox(
+                                              width: buttonWidth,
+                                              height: 56 * scale,
+                                              child: _HabuuButton(
+                                                label: 'Iniciar sesión',
+                                                filled: true,
+                                                scale: scale,
+                                                onTap: onLogin,
+                                              ),
+                                            ),
+                                            SizedBox(height: 24 * scale),
+                                            SizedBox(
+                                              width: buttonWidth,
+                                              height: 56 * scale,
+                                              child: _HabuuButton(
+                                                label: 'Crear cuenta',
+                                                filled: false,
+                                                scale: scale,
+                                                onTap: onCreateAccount,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Positioned(
+                                          right: 0,
+                                          top: -24 * scale,
+                                          width: 58 * scale,
+                                          child: IgnorePointer(
+                                            child: Image.asset(
+                                              'assets/images/calendar/one_month.png',
+                                              fit: BoxFit.contain,
+                                            ),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          left: 0,
+                                          bottom: -16 * scale,
+                                          width: 54 * scale,
+                                          child: IgnorePointer(
+                                            child: Image.asset(
+                                              'assets/images/calendar/discipline.png',
+                                              fit: BoxFit.contain,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 100 * scale),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                        TextSpan(text: ' te\nayude a mejorar\ntus habitos'),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
-                    textScaler: TextScaler.noScaling,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 40 * s,
-                      fontWeight: FontWeight.w700,
-                      height: 1.1,
-                      letterSpacing: -0.3 * s,
-                      color: _ink,
-                    ),
+                      );
+                    },
                   ),
                 ),
-
-                // Botón "Iniciar sesión" (relleno).
                 Positioned(
-                  left: 127 * s,
-                  top: 260 * s,
-                  width: 186 * s,
-                  height: 60 * s,
-                  child: _HabuuButton(
-                    label: 'Iniciar sesión',
-                    filled: true,
-                    scale: s,
-                    onTap: onLogin,
+                  left: 8 * scale,
+                  bottom: constraints.maxHeight * .35,
+                  width: 46 * scale,
+                  child: IgnorePointer(
+                    child: Image.asset(
+                      'assets/images/landing/dragonfly_left.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
-
-                // Botón "Crear cuenta" (contorno).
                 Positioned(
-                  left: 127 * s,
-                  top: 372 * s,
-                  width: 186 * s,
-                  height: 60 * s,
-                  child: _HabuuButton(
-                    label: 'Crear cuenta',
-                    filled: false,
-                    scale: s,
-                    onTap: onCreateAccount,
+                  right: 8 * scale,
+                  bottom: constraints.maxHeight * .34,
+                  width: 38 * scale,
+                  child: IgnorePointer(
+                    child: Image.asset(
+                      'assets/images/landing/dragonfly_right.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
-
-                // Ranas (van encima de los botones).
-                _sprite('assets/images/calendar/one_month.png', s, left: 284, top: 232, w: 68),
-                _sprite('assets/images/calendar/discipline.png', s, left: 96, top: 398, w: 62),
               ],
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _sprite(
-    String path,
-    double s, {
-    required double left,
-    required double top,
-    required double w,
-  }) {
-    return Positioned(
-      left: left * s,
-      top: top * s,
-      width: w * s,
-      child: IgnorePointer(
-        child: Image.asset(
-          path,
-          fit: BoxFit.fitWidth,
-          filterQuality: FilterQuality.high,
-        ),
       ),
     );
   }
@@ -179,7 +234,7 @@ class _HabuuButton extends StatelessWidget {
         child: Center(
           child: Text(
             label,
-            textScaler: TextScaler.noScaling,
+            textAlign: TextAlign.center,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 19 * scale,
               fontWeight: FontWeight.w600,
