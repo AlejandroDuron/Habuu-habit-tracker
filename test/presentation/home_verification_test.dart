@@ -239,7 +239,8 @@ void main() {
     await _letScannerFinish(tester);
 
     expect(find.text('Verificado'), findsOneWidget);
-    expect(verifier.verifiedPaths, hasLength(2));
+    // Dos del primer intento (con el reintento automático) y uno a mano.
+    expect(verifier.verifiedPaths, hasLength(3));
     expect(home.habits.single.isDone, isTrue);
   });
 

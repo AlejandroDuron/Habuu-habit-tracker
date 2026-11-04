@@ -9,6 +9,7 @@ class FakePhotoVerifier implements HabitPhotoVerifier {
   FakePhotoVerifier({
     VerificationResult? result,
     this.failure,
+    this.failuresLeft,
     this.delay = Duration.zero,
   }) : result = result ?? matching();
 
@@ -17,6 +18,10 @@ class FakePhotoVerifier implements HabitPhotoVerifier {
 
   /// Si no es null, se lanza esta falla en lugar de devolver [result].
   VerificationFailure? failure;
+
+  /// Cuántas veces más se lanza [failure] antes de responder bien.
+  /// null = siempre falla.
+  int? failuresLeft;
 
   /// Cuánto tarda en responder, para ver el estado "verificando".
   Duration delay;
@@ -33,7 +38,11 @@ class FakePhotoVerifier implements HabitPhotoVerifier {
     if (delay > Duration.zero) await Future<void>.delayed(delay);
 
     final failure = this.failure;
-    if (failure != null) throw VerificationException(failure);
+    final left = failuresLeft;
+    if (failure != null && (left == null || left > 0)) {
+      if (left != null) failuresLeft = left - 1;
+      throw VerificationException(failure);
+    }
     return result;
   }
 

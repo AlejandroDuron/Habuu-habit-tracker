@@ -100,8 +100,21 @@ class HomeRepository {
   }
 
   /// Revisa si la foto en [path] tiene que ver con [habit].
-  Future<VerificationResult> verifyEvidence(String path, HomeHabit habit) {
-    return _verifier.verify(photoPath: path, habit: habit);
+  ///
+  /// Si se agota el tiempo se intenta una vez más sin avisar: la primera
+  /// verificación después de un rato sin usarla tarda mucho más, y la
+  /// segunda casi siempre responde rápido.
+  Future<VerificationResult> verifyEvidence(
+    String path,
+    HomeHabit habit,
+  ) async {
+    try {
+      return await _verifier.verify(photoPath: path, habit: habit);
+    } on VerificationException catch (e) {
+      if (e.failure != VerificationFailure.timeout) rethrow;
+      debugPrint('La verificación tardó demasiado, se intenta otra vez');
+      return _verifier.verify(photoPath: path, habit: habit);
+    }
   }
 
   /// Marca el hábito como cumplido con una foto que ya está subida.

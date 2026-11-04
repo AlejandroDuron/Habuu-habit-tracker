@@ -4,6 +4,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:habuu/data/datasources/habit_photo_verifier.dart';
 import 'package:habuu/data/models/home_habit.dart';
 import 'package:habuu/data/repositories/home_repository.dart';
 import 'package:habuu/presentation/models/home/evidence_check.dart';
@@ -119,5 +120,46 @@ void main() {
     expect(error, isNotNull);
     expect(home.evidenceCheckFor('h1'), isNull);
     expect(verifier.verifiedPaths, isEmpty);
+  });
+
+  test('si la primera vez se agota el tiempo, lo intenta otra vez solo y '
+      'marca el hábito', () async {
+    verifier
+      ..failure = VerificationFailure.timeout
+      ..failuresLeft = 1;
+
+    await home.submitEvidence('h1', _photo);
+    await waitForAnswer();
+    await waitForAnswer();
+
+    expect(verifier.verifiedPaths, hasLength(2));
+    expect(home.evidenceCheckFor('h1')?.status, VerificationStatus.verificado);
+    expect(homeDs.savedLogs, hasLength(1));
+  });
+
+  test(
+    'si se agota el tiempo dos veces, se rinde y muestra el error',
+    () async {
+      verifier.failure = VerificationFailure.timeout;
+
+      await home.submitEvidence('h1', _photo);
+      await waitForAnswer();
+      await waitForAnswer();
+
+      expect(verifier.verifiedPaths, hasLength(2));
+      expect(home.evidenceCheckFor('h1')?.status, VerificationStatus.noSePudo);
+      expect(homeDs.savedLogs, isEmpty);
+    },
+  );
+
+  test('otros errores no se reintentan', () async {
+    verifier.failure = VerificationFailure.cuotaAgotada;
+
+    await home.submitEvidence('h1', _photo);
+    await waitForAnswer();
+    await waitForAnswer();
+
+    expect(verifier.verifiedPaths, hasLength(1));
+    expect(home.evidenceCheckFor('h1')?.status, VerificationStatus.noSePudo);
   });
 }
