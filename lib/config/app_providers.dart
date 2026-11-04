@@ -7,17 +7,20 @@ import '/data/datasources/supabase_daily_summary_data_source.dart';
 import '/data/datasources/supabase_evidence_data_source.dart';
 import '/data/datasources/supabase_habit_data_source.dart';
 import '/data/datasources/supabase_home_data_source.dart';
+import '/data/datasources/supabase_profile_data_source.dart';
 import '/data/datasources/supabase_streak_data_source.dart';
 import '/data/datasources/supabase_trophy_data_source.dart';
 import '/data/datasources/verification_preferences.dart';
 import '/data/repositories/auth_repository.dart';
 import '/data/repositories/habit_repository.dart';
 import '/data/repositories/home_repository.dart';
+import '/data/repositories/profile_repository.dart';
 import '/data/repositories/streak_repository.dart';
 import '/data/repositories/trophy_repository.dart';
 import '/presentation/providers/auth_provider.dart';
 import '/presentation/providers/habits_provider.dart';
 import '/presentation/providers/home_provider.dart';
+import '/presentation/providers/profile_provider.dart';
 import '/presentation/providers/streaks_provider.dart';
 import '/presentation/providers/trophies_provider.dart';
 import '/presentation/providers/verification_settings_provider.dart';
@@ -94,6 +97,13 @@ class _UserDataProviders extends StatelessWidget {
 
     return MultiProvider(
       providers: [
+        // Se crea (y carga) la primera vez que se abre la pantalla de Usuario.
+        ChangeNotifierProvider(
+          create: (_) => ProfileProvider(
+            ProfileRepository(SupabaseProfileDataSource(supabase.auth)),
+          )..load(),
+        ),
+
         //TrophiesProvider no depende de nadie, por eso es un ChangeNotifierProvider
         ChangeNotifierProvider(
           create: (_) => TrophiesProvider(

@@ -28,7 +28,6 @@ abstract final class HomeAssets {
   static const camera = 'assets/icons/home/camera.svg';
 }
 
-
 abstract final class HabitIconAssets {
   static const run = 'assets/icons/habits/run.svg';
   static const water = 'assets/icons/habits/water.svg';
@@ -51,7 +50,6 @@ abstract final class HabitIconAssets {
 }
 
 abstract final class ProfileAssets {
-  static const avatar = 'assets/images/profile/avatar.jpg';
   static const frogHeadphones = 'assets/images/profile/frog_headphones.png';
   static const frogCrying = 'assets/images/profile/frog_crying.png';
 

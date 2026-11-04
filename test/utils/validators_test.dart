@@ -82,4 +82,67 @@ void main() {
       expect(validator('OtraClave1!'), isNull);
     });
   });
+
+  group('fullName', () {
+    test('vacío o solo espacios pide el nombre', () {
+      expect(Validators.fullName(null), 'Ingresa tu nombre');
+      expect(Validators.fullName('   '), 'Ingresa tu nombre');
+    });
+
+    test('más de 80 caracteres no pasa', () {
+      expect(Validators.fullName('a' * 80), isNull);
+      expect(
+        Validators.fullName('a' * 81),
+        'El nombre puede tener hasta 80 caracteres',
+      );
+    });
+  });
+
+  group('phone', () {
+    test('es opcional', () {
+      expect(Validators.phone(null), isNull);
+      expect(Validators.phone('  '), isNull);
+    });
+
+    test('acepta espacios, guiones y un + al inicio', () {
+      expect(Validators.phone('+503 7123-4567'), isNull);
+      expect(Validators.phone('71234567'), isNull);
+    });
+
+    test('letras o un + en medio no pasan', () {
+      const message = 'Usa solo números, espacios, guiones y un + al inicio';
+      expect(Validators.phone('7123abcd'), message);
+      expect(Validators.phone('503+71234567'), message);
+    });
+
+    test('pide entre 8 y 15 dígitos', () {
+      const message = 'El teléfono debe tener entre 8 y 15 dígitos';
+      expect(Validators.phone('7123 456'), message);
+      expect(Validators.phone('1234567890123456'), message);
+      expect(Validators.phone('123456789012345'), isNull);
+    });
+  });
+
+  group('birthday', () {
+    final today = DateTime(2026, 11, 3);
+
+    test('es opcional', () {
+      expect(Validators.birthday(null, today: today), isNull);
+    });
+
+    test('hoy sí, mañana no', () {
+      expect(Validators.birthday(DateTime(2026, 11, 3), today: today), isNull);
+      expect(
+        Validators.birthday(DateTime(2026, 11, 4), today: today),
+        'La fecha no puede ser en el futuro',
+      );
+    });
+
+    test('antes de 1900 no es válida', () {
+      expect(
+        Validators.birthday(DateTime(1899, 12, 31), today: today),
+        'Ingresa una fecha válida',
+      );
+    });
+  });
 }

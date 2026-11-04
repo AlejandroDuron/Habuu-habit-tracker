@@ -11,7 +11,6 @@ import '../../widgets/profile/pond_scroll_view.dart';
 import '../../widgets/profile/profile_menu.dart';
 import 'logout_confirm_screen.dart';
 import 'preferences_screen.dart';
-import 'profile_mock_data.dart';
 import 'user_screen.dart';
 
 /// Pestaña "Perfil": aviso de la ranita y menú de configuración.
@@ -24,11 +23,8 @@ class ProfileScreen extends StatelessWidget {
   // ── Navegación ────────────────────────────────────────────────────────────
 
   void _openUser(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const UserScreen(user: ProfileMockData.user),
-      ),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const UserScreen()));
   }
 
   void _openPreferences(BuildContext context) {

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:habuu/config/theme/tokens.dart';
 
 /// Botón principal verde de las pantallas de autenticación.
-/// Con [isLoading] muestra un indicador y se desactiva.
+/// Con [isLoading] muestra un indicador y se desactiva. Con [onPressed]
+/// null se ve apagado.
 class AuthButton extends StatelessWidget {
   const AuthButton({
     super.key,
@@ -28,7 +29,9 @@ class AuthButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: HabuuColors.primary500,
             foregroundColor: HabuuColors.white100,
-            disabledBackgroundColor: HabuuColors.primary500,
+            disabledBackgroundColor: isLoading
+                ? HabuuColors.primary500
+                : HabuuColors.primary200,
             disabledForegroundColor: HabuuColors.white100,
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 12),
