@@ -26,7 +26,6 @@ class HabitFilterChips extends StatelessWidget {
   static const _types = [
     ('Frecuente', HabitChipFilter.frequent),
     ('Fugaz', HabitChipFilter.fleeting),
-    ('Omitidos', HabitChipFilter.omitted),
   ];
 
   @override

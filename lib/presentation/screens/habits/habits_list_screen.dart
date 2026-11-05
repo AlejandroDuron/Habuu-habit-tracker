@@ -224,6 +224,8 @@ class HabitsListScreen extends StatelessWidget {
                     : HabitsListView(
                         habits: provider.filteredHabits,
                         isLoading: provider.isLoading,
+                        logStatuses: provider.logStatuses,
+                        chipFilter: provider.chipFilter,
                         onEdit: (habit) => _openEdit(context, habit),
                         onDelete: (habit) => _deleteHabit(context, habit),
                         onMove: (habit) => _moveHabit(context, habit),

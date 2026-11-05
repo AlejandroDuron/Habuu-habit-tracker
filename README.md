@@ -98,11 +98,47 @@ test/                  # Pruebas unitarias y de widgets (con Fakes)
 - Un proyecto de Supabase.
 - Para probar en celular: Android Studio (emulador o celular Android) o Xcode (iPhone).
 
-### 2. Base de datos
+### 2. Configuración necesaria
 
-En Supabase abre **SQL Editor › New query**, pega todo el contenido de [`supabase/schema.sql`](supabase/schema.sql) y dale **Run**. Ese script crea las tablas, las reglas de seguridad (RLS) y los datos iniciales de categorías y trofeos.
+Crear una cuenta en el servicio de Supabase y un proyecto nuevo, y realizar los siguientes pasos:
 
-### 3. Correos de verificación
+1. Entra al proyecto creado y abre el panel (que está en el costado izquierdo) y da clic en "SQL editor."
+2. Da clic en el botón con el ícono "+" para crear una nueva query.
+3. Copia el contenido del archivo que está en el repositorio del proyecto en la ruta `supabase/database_schema.sql` y pégalo en Supabase en el editor de SQL.
+4. Dar clic en "Run" para crear la base de datos.
+5. Para verificar que todo se ejecutó correctamente, ingresa al panel izquierdo y selecciona "Table Editor"; deben de mostrarse todas las tablas.
+6. Luego se deben obtener 2 credenciales de Supabase para poder ejecutar la app, las cuales son `SUPABASE_URL` y `SUPABASE_KEY`. Los valores de estas se pueden encontrar en el botón **Connect** arriba en el panel. Se abrirá una sección con el nombre "Connect to your project"; dentro debe seleccionar "Framework", buscar y seleccionar Flutter, luego debe bajar al paso "Add files" y seleccionar `lib/main.dart` y aparecerán las credenciales. Cópialas y guárdalas, ya que las necesitarás en el paso 8.
+
+En el código fuente del proyecto:
+
+7. Clonar el repositorio de Habuu.
+8. Crear un archivo `env.json` en la raíz del proyecto con `SUPABASE_URL` y `SUPABASE_KEY`, cada uno con el valor obtenido de Supabase en el paso 6:
+
+```json
+{
+  "SUPABASE_URL": "https://<tu-proyecto>.supabase.co",
+  "SUPABASE_KEY": "<tu-anon-key>"
+}
+```
+
+El archivo `env.json` ya está en `.gitignore` para que las credenciales no se suban al repositorio.
+
+### 3. Cómo ejecutar la app
+
+```bash
+flutter pub get
+flutter run --dart-define-from-file=env.json
+```
+
+Para elegir dónde correrla:
+
+```bash
+flutter devices                                              # ver dispositivos
+flutter run -d chrome --dart-define-from-file=env.json       # navegador
+flutter run -d <id-del-celular> --dart-define-from-file=env.json
+```
+
+### 4. Correos de verificación
 
 Al registrarse, la app pide un **código de 6 dígitos** que llega por correo, y lo mismo pasa al recuperar la contraseña. El correo que trae Supabase por defecto no deja editar las plantillas y manda un enlace en lugar del código, así que usamos **Brevo** como servidor SMTP. Es gratis (300 correos al día) y no necesita dominio propio.
 
@@ -144,34 +180,6 @@ Al registrarse, la app pide un **código de 6 dígitos** que llega por correo, y
 | Llega un código de 8 dígitos | Falta cambiar *Email OTP Length* a `6`. |
 
 Si un registro falla después de crear el usuario, queda una cuenta sin confirmar. Hay que borrarla en **Authentication › Users** antes de volver a registrar ese correo. Los correos pueden caer en spam, porque el remitente no es un dominio propio.
-
-### 4. Variables de entorno
-
-Crea un archivo `env.json` en la raíz del proyecto. Ya está en `.gitignore`:
-
-```json
-{
-  "SUPABASE_URL": "https://bvhmncxhuaustkupwyqi.supabase.co",
-  "SUPABASE_KEY": "sb_publishable_lW2V51Ak1GfKeyzvnVyMPA_jcz-qTA0"
-}
-```
-
-Los dos valores están en Supabase, en **Project Settings › API**.
-
-### 5. Instalar y correr
-
-```bash
-flutter pub get
-flutter run --dart-define-from-file=env.json
-```
-
-Para elegir dónde correrla:
-
-```bash
-flutter devices                                              # ver dispositivos
-flutter run -d chrome --dart-define-from-file=env.json       # navegador
-flutter run -d <id-del-celular> --dart-define-from-file=env.json
-```
 
 ---
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../config/theme/tokens.dart';
 import '../../../data/models/trophy.dart';
+import '../shared/navbar.dart';
 
 /// Mapeo de trophy_key → ruta del asset de imagen (igual que en TrophiesScreen).
 String _imageForKey(String? key) {
@@ -84,11 +85,14 @@ class _TrophyEarnedToastState extends State<TrophyEarnedToast>
   @override
   Widget build(BuildContext context) {
     final trophy = widget.trophy.trophy;
+    // Calcula el offset desde el fondo: altura del navbar (69) + zona segura
+    // del sistema (home indicator en iPhone, barra de gestos en Android).
+    final bottomInset = HabuuNavbar.bodyBottomInsetOf(context);
 
     return Positioned(
       left: 24,
       right: 24,
-      bottom: 100, // Por encima de la navbar
+      bottom: bottomInset + 12, // 12 px de margen sobre el navbar
       child: SlideTransition(
         position: _slide,
         child: FadeTransition(

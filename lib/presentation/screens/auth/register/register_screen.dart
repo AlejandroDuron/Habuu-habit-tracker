@@ -6,6 +6,7 @@ import 'package:habuu/config/assets.dart';
 import 'package:habuu/config/theme/tokens.dart';
 import 'package:habuu/presentation/screens/auth/verification/code_verification_screen.dart';
 import 'package:habuu/presentation/widgets/auth/auth_button.dart';
+import 'package:habuu/config/routes.dart';
 import 'package:habuu/presentation/widgets/auth/auth_scaffold.dart';
 import 'package:habuu/presentation/widgets/auth/auth_text_field.dart';
 import 'package:habuu/utils/validators.dart';
@@ -138,6 +139,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
           label: 'Crear cuenta',
           onPressed: _register,
           isLoading: context.select<AuthProvider, bool>((a) => a.isLoading),
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: TextButton(
+            onPressed: () =>
+                Navigator.of(context).pushReplacementNamed(AppRoutes.login),
+            child: Text.rich(
+              TextSpan(
+                text: '¿Ya tienes una cuenta? ',
+                style: HabuuText.subtitleSmMedium.copyWith(
+                  fontWeight: HabuuWeight.bold,
+                ),
+                children: [
+                  TextSpan(
+                    text: 'Iniciar sesión',
+                    style: TextStyle(color: HabuuTextColors.links),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );
