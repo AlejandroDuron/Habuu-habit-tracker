@@ -240,7 +240,7 @@ Esto es solo para pruebas locales: con `--dart-define` la clave queda dentro del
 
 ```json
 {
-  "photoPath": "<user_id>/<habit_id>/2026-11-03.jpg",
+  "photoPath": "<user_id>/<habit_id>/2026-11-03_1762200000000.jpg",
   "habitName": "Leer",
   "habitGoal": "20 páginas"
 }

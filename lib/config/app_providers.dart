@@ -144,8 +144,6 @@ class _UserDataProviders extends StatelessWidget {
               SupabaseHomeDataSource(supabase),
               evidenceDs,
               dailySummaryDs,
-              // Para probar en local sin la Edge Function:
-              // verifier: GeminiDirectPhotoVerifier(evidenceDs),
               verifier: GeminiEdgeFunctionPhotoVerifier(supabase.functions),
             ),
           ),

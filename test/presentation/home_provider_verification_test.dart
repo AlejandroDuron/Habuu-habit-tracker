@@ -112,6 +112,23 @@ void main() {
     expect(homeDs.savedLogs, hasLength(1));
   });
 
+  test('si la foto no coincide y manda otra, se revisa la nueva y la '
+      'anterior se borra', () async {
+    verifier.result = FakePhotoVerifier.notMatching();
+    await home.submitEvidence('h1', _photo);
+    await waitForAnswer();
+
+    verifier.result = FakePhotoVerifier.matching();
+    await home.submitEvidence('h1', _otherPhoto);
+    await waitForAnswer();
+
+    expect(verifier.verifiedPaths, hasLength(2));
+    expect(verifier.verifiedPaths.first, isNot(verifier.verifiedPaths.last));
+    expect(evidence.photos.keys, [verifier.verifiedPaths.last]);
+    expect(evidence.photos.values.single, same(_otherPhoto));
+    expect(home.evidenceCheckFor('h1')?.status, VerificationStatus.verificado);
+  });
+
   test('si la subida falla, devuelve el mensaje y no verifica', () async {
     evidence.errorToThrow = Exception('sin red');
 

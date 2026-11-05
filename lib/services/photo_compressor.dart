@@ -8,7 +8,7 @@ const _startWidth = 1080;
 const _minWidth = 320;
 const _qualities = [85, 70, 55, 40];
 
-/// Convierte una foto a JPG de [maxEvidenceBytes] o menos.
+/// Convierte una foto a JPG de 100 kb o menos.
 ///
 /// Corre en otro isolate, porque comprimir una foto grande tarda y
 /// congelaría la pantalla.

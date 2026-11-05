@@ -22,8 +22,11 @@ class SupabaseEvidenceDataSource implements EvidenceDataSource {
     if (user == null) throw const NotSignedInException();
 
     // Cada usuario tiene su carpeta; las políticas del bucket solo le dejan
-    // tocar la suya.
-    final path = '${user.id}/$habitId/${isoDate(day)}.jpg';
+    // tocar la suya. Cada foto va a una ruta nueva: si se reemplaza una,
+    // el CDN de Storage sigue sirviendo la vieja hasta un minuto y Gemini
+    // revisaría la foto anterior.
+    final stamp = DateTime.now().millisecondsSinceEpoch;
+    final path = '${user.id}/$habitId/${isoDate(day)}_$stamp.jpg';
 
     try {
       await _client.storage

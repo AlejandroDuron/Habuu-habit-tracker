@@ -1,4 +1,4 @@
-/// Usuario con sesión iniciada. Así la app no depende del `User` de Supabase.
+/// Usuario con sesión iniciada
 class AppUser {
   const AppUser({required this.id, required this.email, this.name});
 

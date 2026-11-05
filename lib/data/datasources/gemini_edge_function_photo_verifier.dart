@@ -7,8 +7,7 @@ import '../models/home_habit.dart';
 import '../models/verification_result.dart';
 import 'habit_photo_verifier.dart';
 
-/// Verifica la foto con la Edge Function "verify-habit-photo". La clave de
-/// Gemini se queda en Supabase, la app nunca la ve.
+/// Verifica la foto con la Edge Function "verify-habit-photo".
 class GeminiEdgeFunctionPhotoVerifier implements HabitPhotoVerifier {
   GeminiEdgeFunctionPhotoVerifier(
     this._functions, {
@@ -17,10 +16,7 @@ class GeminiEdgeFunctionPhotoVerifier implements HabitPhotoVerifier {
 
   final FunctionsClient _functions;
 
-  /// La función le da 25 s a Gemini, pero antes puede tardar en arrancar
-  /// (la primera llamada después de un rato) y en bajar la foto. Si la app
-  /// se rinde antes que la función, el usuario ve "se agotó el tiempo"
-  /// aunque Gemini sí iba a responder.
+  /// La función le da 25 s a Gemini
   final Duration timeout;
 
   static const functionName = 'verify-habit-photo';

@@ -7,6 +7,7 @@ import 'package:habuu/utils/dates.dart';
 
 class FakeEvidenceDataSource implements EvidenceDataSource {
   final Map<String, Uint8List> photos = {};
+  int _uploads = 0;
 
   /// Para simular que falla la subida o la descarga.
   Object? errorToThrow;
@@ -23,7 +24,8 @@ class FakeEvidenceDataSource implements EvidenceDataSource {
     required Uint8List bytes,
   }) async {
     _failIfNeeded();
-    final path = 'user-1/$habitId/${isoDate(day)}.jpg';
+    // Cada subida queda en una ruta nueva, igual que en Storage.
+    final path = 'user-1/$habitId/${isoDate(day)}_${_uploads++}.jpg';
     photos[path] = bytes;
     return path;
   }

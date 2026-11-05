@@ -13,7 +13,9 @@ import '../../services/photo_compressor.dart';
 import '../models/home/evidence_check.dart';
 import 'habits_provider.dart';
 import 'streaks_provider.dart';
-import 'trophies_provider.dart';/// En qué punto está la carga del Home.
+import 'trophies_provider.dart';
+
+/// En qué punto está la carga del Home.
 enum HomeStatus { loading, ready, error, signedOut }
 
 class HomeProvider extends ChangeNotifier {
@@ -23,8 +25,8 @@ class HomeProvider extends ChangeNotifier {
     this._repository, {
     DateTime Function()? clock,
     TrophiesProvider? trophies,
-  })  : _clock = clock ?? DateTime.now,
-        _trophies = trophies;
+  }) : _clock = clock ?? DateTime.now,
+       _trophies = trophies;
 
   final HomeRepository _repository;
   final DateTime Function() _clock;
@@ -174,8 +176,17 @@ class HomeProvider extends ChangeNotifier {
         photoPath: path,
         status: VerificationStatus.verificando,
       );
+      final previous = _checks[habitId];
       _checks[habitId] = check;
       notifyListeners();
+
+      // La foto anterior ya no sirve. Si todavía se está revisando, se borra
+      // cuando llegue la respuesta.
+      if (previous != null &&
+          (previous.status == VerificationStatus.noConfirmado ||
+              previous.status == VerificationStatus.noSePudo)) {
+        unawaited(_repository.discardEvidence(previous.photoPath));
+      }
 
       unawaited(_verify(habitId, check));
       return null;
@@ -261,7 +272,10 @@ class HomeProvider extends ChangeNotifier {
 
     final abandoned = _abandoned.remove(check.id);
     // Si mientras tanto se mandó otra foto, esta respuesta ya no sirve.
-    if (!abandoned && !_isCurrent(habitId, check)) return;
+    if (!abandoned && !_isCurrent(habitId, check)) {
+      unawaited(_repository.discardEvidence(check.photoPath));
+      return;
+    }
 
     if (result != null && result.coincide) {
       // Aunque el panel ya esté cerrado, la foto sirve: se marca igual.
@@ -281,10 +295,7 @@ class HomeProvider extends ChangeNotifier {
     }
 
     if (abandoned) {
-      // Se borra, salvo que ya haya otra foto en la misma ruta.
-      if (!_checks.containsKey(habitId)) {
-        unawaited(_repository.discardEvidence(check.photoPath));
-      }
+      unawaited(_repository.discardEvidence(check.photoPath));
       return;
     }
 
@@ -327,7 +338,9 @@ class HomeProvider extends ChangeNotifier {
   /// Lanza [HomeDataException] si no se pudo cargar.
   Future<Uint8List> evidencePhotoFor(String habitId) async {
     final path = _findLog(habitId)?.evidencePath;
-    if (path == null) throw const HomeDataException('Este hábito no tiene foto');
+    if (path == null) {
+      throw const HomeDataException('Este hábito no tiene foto');
+    }
 
     final saved = _photos[path];
     if (saved != null) return saved;
@@ -375,9 +388,9 @@ class HomeProvider extends ChangeNotifier {
     if (trophies == null) return;
 
     // Trofeo de día completado.
-    trophies.checkDayCompleted(allDone: allDone).catchError(
-      (e) => debugPrint('Error al evaluar day_completed: $e'),
-    );
+    trophies
+        .checkDayCompleted(allDone: allDone)
+        .catchError((e) => debugPrint('Error al evaluar day_completed: $e'));
 
     // Si el día quedó completo, evaluamos trofeos adicionales.
     if (allDone) {
@@ -405,14 +418,13 @@ class HomeProvider extends ChangeNotifier {
     // Pedimos la racha al StreaksProvider si está disponible; si no,
     // usamos una estimación mínima de 1 (el día de hoy quedó completo).
     final streaks = _streaksProvider;
-    final currentStreak =
-        (streaks != null && streaks.currentStreak > 0)
-            ? streaks.currentStreak
-            : 1;
+    final currentStreak = (streaks != null && streaks.currentStreak > 0)
+        ? streaks.currentStreak
+        : 1;
 
-    trophies.checkStreakTrophies(currentStreak: currentStreak).catchError(
-      (e) => debugPrint('Error al evaluar trofeos de racha: $e'),
-    );
+    trophies
+        .checkStreakTrophies(currentStreak: currentStreak)
+        .catchError((e) => debugPrint('Error al evaluar trofeos de racha: $e'));
   }
 
   // ── Inyección de StreaksProvider ─────────────────────────────────────────
