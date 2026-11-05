@@ -55,4 +55,28 @@ class StreaksProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Recarga la racha sin pasar por el estado [loading], para que el
+  /// [StreakHeader] no se desmonte y no dispare animaciones falsas.
+  ///
+  /// Pasa [dayJustCompleted] en true cuando el día acaba de completarse,
+  /// para que el header sepa que debe animar el salto de Froggy.
+  Future<void> refreshSilently({bool dayJustCompleted = false}) async {
+    if (_status == StreaksStatus.loading) return;
+
+    try {
+      _data = await _repository.getStreak();
+      _status = StreaksStatus.ready;
+      _lastCompletionWasNew = dayJustCompleted;
+      notifyListeners();
+      _lastCompletionWasNew = false;
+    } catch (e) {
+      debugPrint('Error al recargar racha: $e');
+    }
+  }
+
+  /// true solo durante el rebuild inmediatamente posterior a un día completado.
+  /// El [StreakHeader] lo lee para decidir si anima el salto.
+  bool _lastCompletionWasNew = false;
+  bool get dayJustCompleted => _lastCompletionWasNew;
 }

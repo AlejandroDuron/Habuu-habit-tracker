@@ -33,7 +33,7 @@ class _StreakScreenState extends State<StreakScreen> {
     final trophies = context.watch<TrophiesProvider>();
     final frogAwake = context.watch<HomeProvider>().frogAwake;
 
-    if (streaks.isLoading) {
+    if (streaks.isLoading && streaks.status == StreaksStatus.initial) {
       return const Center(
         child: CircularProgressIndicator(color: HabuuColors.success700),
       );
@@ -50,6 +50,7 @@ class _StreakScreenState extends State<StreakScreen> {
           StreakHeader(
             streakCount: streaks.currentStreak,
             frogAwake: frogAwake,
+            dayJustCompleted: streaks.dayJustCompleted,
           ),
           const SizedBox(height: 24),
           Padding(

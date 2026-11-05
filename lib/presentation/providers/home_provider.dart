@@ -78,10 +78,17 @@ class HomeProvider extends ChangeNotifier {
       // completo. Esto cubre el caso en que se crea un hábito nuevo en un
       // día que ya tenía todos sus hábitos cumplidos.
       if (_habits.isNotEmpty && !_habits.every((h) => h.isDone)) {
-        _repository.markDayIncomplete(today);
-        // Recarga la racha para que el calendario refleje que el día ya
-        // no está completado (se desmarca la bolita verde).
-        _streaksProvider?.loadStreak();
+        await _repository.markDayIncomplete(today);
+        // Recarga silenciosa: el día se desmarcó, sin animar.
+        unawaited(_streaksProvider?.refreshSilently());
+      }
+
+      // Si todos los hábitos del día están hechos (por ejemplo, se eliminó
+      // el único que faltaba), marca el día como completo y recarga la racha.
+      if (_habits.isNotEmpty && _habits.every((h) => h.isDone)) {
+        await _repository.checkAndMarkDayComplete(today, _habits);
+        // Recarga con animación: el día se completó de nuevo.
+        unawaited(_streaksProvider?.refreshSilently(dayJustCompleted: true));
       }
     } on NotSignedInException {
       _habits = [];
@@ -111,7 +118,7 @@ class HomeProvider extends ChangeNotifier {
           ? await _repository.markDone(habitId, today)
           : await _repository.markDoneWithPhoto(habitId, today, photo);
       _remember(log, photo);
-      _applyLog(habitId, log);
+      await _applyLog(habitId, log);
       return null;
     } catch (e) {
       return _messageFor(e);
@@ -130,7 +137,7 @@ class HomeProvider extends ChangeNotifier {
       // Busca el TodayHabit correspondiente para validar allowSkip.
       final todayHabit = _habits.firstWhere((h) => h.habit.id == habitId);
       final log = await _repository.markSkipped(todayHabit, today);
-      _applyLog(habitId, log);
+      await _applyLog(habitId, log);
       return null;
     } catch (e) {
       return _messageFor(e);
@@ -140,7 +147,7 @@ class HomeProvider extends ChangeNotifier {
   }
 
   /// Pone el nuevo registro en la lista y avisa a lo que depende de él.
-  void _applyLog(String habitId, HabitLog log) {
+  Future<void> _applyLog(String habitId, HabitLog log) async {
     final today = _clock();
 
     // Actualiza la lista en memoria con el nuevo log.
@@ -150,8 +157,9 @@ class HomeProvider extends ChangeNotifier {
     ];
 
     // Evalúa si el día quedó completo y registra en daily_summaries.
+    // Se espera el write para que refreshSilently lea el valor ya guardado.
     final allDone = _habits.every((h) => h.isDone);
-    _repository.checkAndMarkDayComplete(today, _habits);
+    await _repository.checkAndMarkDayComplete(today, _habits);
 
     // Omitir un hábito no cuenta como cumplirlo.
     if (log.isDone) _lastDoneAt = DateTime.now();
@@ -164,9 +172,9 @@ class HomeProvider extends ChangeNotifier {
     // Sincroniza: el HabitsList necesita saber el nuevo estado del log.
     _habitsProvider?.reloadLogStatuses();
 
-    // Si el día quedó completo, recarga la racha para que el calendario
-    // refleje el cambio sin necesitar hot reload ni cambiar de pestaña.
-    if (allDone) _streaksProvider?.loadStreak();
+    // Si el día quedó completo, recarga la racha silenciosamente con
+    // animación para que el calendario se actualice y Froggy salte.
+    if (allDone) unawaited(_streaksProvider?.refreshSilently(dayJustCompleted: true));
   }
 
   String _messageFor(Object e) {
@@ -354,7 +362,7 @@ class HomeProvider extends ChangeNotifier {
         check.photoPath,
       );
       _remember(log, check.photo);
-      _applyLog(habitId, log);
+      await _applyLog(habitId, log);
       return null;
     } catch (e) {
       return _messageFor(e);

@@ -46,12 +46,16 @@ class StreakHeader extends StatefulWidget {
     super.key,
     required this.streakCount,
     this.frogAwake = false,
+    this.dayJustCompleted = false,
   });
 
   final int streakCount;
 
   /// true si el usuario completó al menos un hábito hoy.
   final bool frogAwake;
+
+  /// true cuando el día acaba de completarse (señal explícita para animar).
+  final bool dayJustCompleted;
 
   @override
   State<StreakHeader> createState() => _StreakHeaderState();
@@ -74,6 +78,7 @@ class _StreakHeaderState extends State<StreakHeader> {
     super.didUpdateWidget(old);
 
     final awakeBecameTrue = !old.frogAwake && widget.frogAwake;
+    final dayCompleted = !old.dayJustCompleted && widget.dayJustCompleted;
     final streakHitMilestone =
         old.streakCount < _kMilestoneStreak &&
         widget.streakCount >= _kMilestoneStreak;
@@ -85,7 +90,13 @@ class _StreakHeaderState extends State<StreakHeader> {
       return;
     }
 
-    // Si frogAwake acaba de activarse, salta como en el Home.
+    // El día se completó explícitamente (señal del provider) → salta.
+    if (dayCompleted) {
+      _startHopping();
+      return;
+    }
+
+    // Froggy despertó en el Home (completó el primer hábito del día) → salta.
     if (awakeBecameTrue) {
       _startHopping();
       return;

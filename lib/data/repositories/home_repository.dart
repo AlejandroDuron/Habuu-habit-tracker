@@ -158,23 +158,30 @@ class HomeRepository {
   /// Llamar con la lista ya actualizada tras aplicar el nuevo log.
   /// Los omitidos (skipped) no cuentan — si el usuario solo omite hábitos,
   /// el día NO se marca como completado.
-  void checkAndMarkDayComplete(DateTime day, List<TodayHabit> habits) {
+  Future<void> checkAndMarkDayComplete(
+    DateTime day,
+    List<TodayHabit> habits,
+  ) async {
     if (habits.isEmpty) return;
     if (!habits.every((h) => h.isDone)) return;
 
-    _dailySummary.markDayComplete(day).catchError((e) {
+    try {
+      await _dailySummary.markDayComplete(day);
+    } catch (e) {
       debugPrint('No se pudo actualizar el resumen diario: $e');
-    });
+    }
   }
 
   /// Invalida el día [day] en [daily_summaries] poniéndolo como incompleto.
   ///
   /// Llamar cuando se añade un hábito nuevo a un día que ya estaba marcado
   /// como completado, para que la racha no cuente ese día prematuramente.
-  void markDayIncomplete(DateTime day) {
-    _dailySummary.markDayIncomplete(day).catchError((e) {
+  Future<void> markDayIncomplete(DateTime day) async {
+    try {
+      await _dailySummary.markDayIncomplete(day);
+    } catch (e) {
       debugPrint('No se pudo invalidar el resumen diario: $e');
-    });
+    }
   }
 
   Future<void> _deleteQuietly(String path) async {
