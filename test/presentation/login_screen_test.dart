@@ -136,15 +136,4 @@ void main() {
 
     expect(repository.signInCalls, 1);
   });
-
-  testWidgets('los botones de Apple, Microsoft y Google dicen "Próximamente"', (
-    tester,
-  ) async {
-    await openLogin(tester);
-
-    await tester.tap(find.bySemanticsLabel('Continuar con Google'));
-    await tester.pump();
-
-    expect(find.text('Próximamente'), findsOneWidget);
-  });
 }

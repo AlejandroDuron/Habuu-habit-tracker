@@ -5,10 +5,6 @@ abstract final class AuthAssets {
   static const frogHappy = 'assets/images/auth/frog_happy.png';
   static const frogPassword =
       'assets/images/auth/frog_police_password_green.png';
-
-  static const apple = 'assets/icons/auth/apple.svg';
-  static const microsoft = 'assets/icons/auth/microsoft.svg';
-  static const google = 'assets/icons/auth/google.svg';
 }
 
 abstract final class HomeAssets {

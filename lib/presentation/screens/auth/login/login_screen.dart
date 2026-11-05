@@ -8,7 +8,6 @@ import 'package:habuu/config/theme/tokens.dart';
 import 'package:habuu/presentation/widgets/auth/auth_button.dart';
 import 'package:habuu/presentation/widgets/auth/auth_scaffold.dart';
 import 'package:habuu/presentation/widgets/auth/auth_text_field.dart';
-import 'package:habuu/presentation/widgets/auth/social_login_buttons.dart';
 import 'package:habuu/utils/validators.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -107,17 +106,6 @@ class _LoginScreenState extends State<LoginScreen> {
           onPressed: _login,
           isLoading: context.select<AuthProvider, bool>((a) => a.isLoading),
         ),
-        const SizedBox(height: 24),
-        Center(
-          child: Text(
-            'o inicia sesión con:',
-            style: HabuuText.subtitleSmMedium.copyWith(
-              fontWeight: HabuuWeight.bold,
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        const SocialLoginButtons(),
         const SizedBox(height: 16),
         Center(
           child: TextButton(

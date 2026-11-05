@@ -70,7 +70,6 @@ flutter:
 
   assets:
     - assets/icons/
-    - assets/icons/auth/
     - assets/icons/habits/
     - assets/icons/habits_list/
     - assets/icons/home/

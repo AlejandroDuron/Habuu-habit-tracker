@@ -8,7 +8,6 @@ import 'package:habuu/presentation/screens/auth/verification/code_verification_s
 import 'package:habuu/presentation/widgets/auth/auth_button.dart';
 import 'package:habuu/presentation/widgets/auth/auth_scaffold.dart';
 import 'package:habuu/presentation/widgets/auth/auth_text_field.dart';
-import 'package:habuu/presentation/widgets/auth/social_login_buttons.dart';
 import 'package:habuu/utils/validators.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -69,8 +68,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
+      showBack: true,
       children: [
-        const SizedBox(height: 32),
+        const SizedBox(height: 8),
         Center(child: Image.asset(AuthAssets.frogMain, width: 200)),
         const SizedBox(height: 8),
         Text(
@@ -139,17 +139,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onPressed: _register,
           isLoading: context.select<AuthProvider, bool>((a) => a.isLoading),
         ),
-        const SizedBox(height: 24),
-        Center(
-          child: Text(
-            'o continúa con:',
-            style: HabuuText.subtitleSmMedium.copyWith(
-              fontWeight: HabuuWeight.bold,
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        const SocialLoginButtons(),
       ],
     );
   }
