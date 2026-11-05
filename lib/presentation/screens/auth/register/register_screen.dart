@@ -27,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
   final _confirmFocus = FocusNode();
+  bool _submitted = false;
 
   @override
   void dispose() {
@@ -41,6 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthProvider>();
     final ok = await auth.register(
@@ -82,7 +84,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         const SizedBox(height: 24),
         Form(
           key: _formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
+          autovalidateMode: _submitted
+              ? AutovalidateMode.onUserInteraction
+              : AutovalidateMode.disabled,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

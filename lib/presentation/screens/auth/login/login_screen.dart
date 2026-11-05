@@ -22,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordFocus = FocusNode();
+  bool _submitted = false;
 
   @override
   void dispose() {
@@ -33,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Si entra, el AuthGate muestra el home; aquí solo se manejan los errores.
   Future<void> _login() async {
+    setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthProvider>();
     final ok = await auth.login(
@@ -58,7 +60,9 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 28),
         Form(
           key: _formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
+          autovalidateMode: _submitted
+              ? AutovalidateMode.onUserInteraction
+              : AutovalidateMode.disabled,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

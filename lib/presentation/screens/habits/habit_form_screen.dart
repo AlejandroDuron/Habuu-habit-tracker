@@ -60,6 +60,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   final List<String> _customCategories = [];
 
   bool _isSaving = false;
+  bool _submitted = false;
 
   bool get _isEditing => widget.habit != null;
 
@@ -78,8 +79,8 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
-    _goalController = TextEditingController();
+    _nameController = TextEditingController(text: widget.habit?.name ?? '');
+    _goalController = TextEditingController(text: widget.habit?.goal ?? '');
     _loadValues(widget.habit);
 
     // Precarga las categorías personalizadas que ya existen en los hábitos
@@ -99,8 +100,8 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   }
 
   void _loadValues(Habit? habit) {
-    _nameController.text = habit?.name ?? '';
-    _goalController.text = habit?.goal ?? '';
+    // Los controllers de texto se inicializan en initState con el texto correcto.
+    // Aquí solo se cargan los valores de estado que no son controllers.
     _type = habit?.type ?? HabitType.frecuente;
     _category = habit?.category ?? HabitCategory.values.first;
     _categoryLabel = habit?.categoryLabel ?? _category.label;
@@ -299,6 +300,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
 
   Future<void> _save() async {
     if (_isSaving) return;
+    setState(() => _submitted = true);
 
     // 1) Campos del Form (nombre, meta, días, día del mes, hora).
     if (!_formKey.currentState!.validate()) {
@@ -365,7 +367,9 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
           bottom: false,
           child: Form(
             key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
+            autovalidateMode: _submitted
+                ? AutovalidateMode.onUserInteraction
+                : AutovalidateMode.disabled,
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(35, 24, 35, 32),
               child: Column(
@@ -676,6 +680,7 @@ class _CategoryDialog extends StatefulWidget {
 class _CategoryDialogState extends State<_CategoryDialog> {
   final _controller = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _submitted = false;
 
   @override
   void dispose() {
@@ -699,6 +704,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   }
 
   void _submit() {
+    setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) return;
     Navigator.pop(context, widget.normalize(_controller.text));
   }
@@ -715,7 +721,9 @@ class _CategoryDialogState extends State<_CategoryDialog> {
       title: const Text('Nueva categoría'),
       content: Form(
         key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
+        autovalidateMode: _submitted
+            ? AutovalidateMode.onUserInteraction
+            : AutovalidateMode.disabled,
         child: TextFormField(
           controller: _controller,
           validator: _validate,

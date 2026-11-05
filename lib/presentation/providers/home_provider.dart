@@ -79,6 +79,9 @@ class HomeProvider extends ChangeNotifier {
       // día que ya tenía todos sus hábitos cumplidos.
       if (_habits.isNotEmpty && !_habits.every((h) => h.isDone)) {
         _repository.markDayIncomplete(today);
+        // Recarga la racha para que el calendario refleje que el día ya
+        // no está completado (se desmarca la bolita verde).
+        _streaksProvider?.loadStreak();
       }
     } on NotSignedInException {
       _habits = [];
@@ -160,6 +163,10 @@ class HomeProvider extends ChangeNotifier {
 
     // Sincroniza: el HabitsList necesita saber el nuevo estado del log.
     _habitsProvider?.reloadLogStatuses();
+
+    // Si el día quedó completo, recarga la racha para que el calendario
+    // refleje el cambio sin necesitar hot reload ni cambiar de pestaña.
+    if (allDone) _streaksProvider?.loadStreak();
   }
 
   String _messageFor(Object e) {

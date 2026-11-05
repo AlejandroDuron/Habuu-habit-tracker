@@ -45,7 +45,7 @@ class _TrophyEarnedToastState extends State<TrophyEarnedToast>
   late final Animation<Offset> _slide;
   late final Animation<double> _fade;
 
-  static const _showDuration = Duration(seconds: 15);
+  static const _showDuration = Duration(seconds: 12);
   static const _animDuration = Duration(milliseconds: 400);
 
   @override
