@@ -56,6 +56,18 @@ class _HomePageState extends State<HomePage> {
     setState(() => _expandedHabitId = null);
   }
 
+  /// Marca el hábito como omitido y cierra el panel.
+  Future<void> _skip(HabitCardData card) async {
+    final error = await context.read<HomeProvider>().markSkipped(card.habitId);
+    if (!mounted) return;
+
+    if (error == null) {
+      _closePanel();
+    } else {
+      _showError(error);
+    }
+  }
+
   /// Marca el hábito como cumplido, con foto o sin ella, y cierra el panel.
   Future<void> _complete(HabitCardData card, {Uint8List? photo}) async {
     final error = await context.read<HomeProvider>().markDone(
@@ -182,7 +194,7 @@ class _HomePageState extends State<HomePage> {
                           allowSkip: card.allowSkip,
                           check: check,
                           onSave: (photo) => _save(card, photo),
-                          onSkip: () => _complete(card),
+                          onSkip: () => _skip(card),
                           onRetry: () => home.retryVerification(card.habitId),
                           onSaveAnyway: () => _saveWithoutVerification(card),
                           onFinish: _closePanel,

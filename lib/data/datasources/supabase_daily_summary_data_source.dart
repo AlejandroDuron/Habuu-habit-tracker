@@ -33,6 +33,29 @@ class SupabaseDailySummaryDataSource implements DailySummaryDataSource {
   }
 
   @override
+  Future<void> markDayIncomplete(DateTime day) async {
+    try {
+      await _client.from('daily_summaries').upsert({
+        'user_id': _userId,
+        'summary_date': isoDate(day),
+        'all_done': false,
+      }, onConflict: 'user_id,summary_date');
+    } on PostgrestException catch (e) {
+      debugPrint(
+        'Supabase error al invalidar resumen diario ${e.code}: ${e.message}',
+      );
+      throw const DailySummaryException(
+        'No se pudo actualizar el estado del día',
+      );
+    } catch (e) {
+      debugPrint('Error de conexión (daily_summaries incomplete): $e');
+      throw const DailySummaryException(
+        'Revisa tu conexión e inténtalo de nuevo',
+      );
+    }
+  }
+
+  @override
   Future<Set<DateTime>> getCompletedDays({required DateTime since}) async {
     try {
       final rows = await _client

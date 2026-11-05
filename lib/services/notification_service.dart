@@ -33,6 +33,8 @@ class LocalNotificationService implements HabitReminderScheduler {
       channelDescription: 'Avisos para cumplir tus hábitos a la hora elegida',
       importance: Importance.high,
       priority: Priority.high,
+      // Icono monocromático blanco sobre fondo transparente (requerido en Android 5+)
+      icon: 'ic_notification',
     ),
     iOS: DarwinNotificationDetails(),
   );
@@ -52,8 +54,8 @@ class LocalNotificationService implements HabitReminderScheduler {
 
     await _plugin.initialize(
       settings: const InitializationSettings(
-        // El ícono de la notificación en Android es el de la app
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        // Icono monocromático para la barra de notificaciones de Android
+        android: AndroidInitializationSettings('@drawable/ic_notification'),
         // En iOS el permiso lo pedimos aparte con requestPermission().
         iOS: DarwinInitializationSettings(
           requestAlertPermission: false,

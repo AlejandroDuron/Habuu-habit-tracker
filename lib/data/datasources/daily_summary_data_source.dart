@@ -3,6 +3,10 @@ abstract interface class DailySummaryDataSource {
   /// Hace upsert, así que es seguro llamarlo más de una vez.
   Future<void> markDayComplete(DateTime day);
 
+  /// Marca el día [day] como incompleto (all_done = false).
+  /// Se usa cuando se añade un hábito nuevo a un día ya marcado como completo.
+  Future<void> markDayIncomplete(DateTime day);
+
   /// Trae todas las fechas marcadas como completadas desde [since].
   Future<Set<DateTime>> getCompletedDays({required DateTime since});
 

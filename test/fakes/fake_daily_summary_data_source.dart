@@ -9,6 +9,10 @@ class FakeDailySummaryDataSource implements DailySummaryDataSource {
   Future<void> markDayComplete(DateTime day) async => completedDays.add(day);
 
   @override
+  Future<void> markDayIncomplete(DateTime day) async =>
+      completedDays.remove(day);
+
+  @override
   Future<Set<DateTime>> getCompletedDays({required DateTime since}) async =>
       completedDays.toSet();
 

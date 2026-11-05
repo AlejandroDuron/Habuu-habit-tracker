@@ -70,8 +70,16 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _habits = await _repository.getHabitsFor(_clock());
+      final today = _clock();
+      _habits = await _repository.getHabitsFor(today);
       _status = HomeStatus.ready;
+
+      // Si hay hábitos pendientes, el día ya no puede estar marcado como
+      // completo. Esto cubre el caso en que se crea un hábito nuevo en un
+      // día que ya tenía todos sus hábitos cumplidos.
+      if (_habits.isNotEmpty && !_habits.every((h) => h.isDone)) {
+        _repository.markDayIncomplete(today);
+      }
     } on NotSignedInException {
       _habits = [];
       _status = HomeStatus.signedOut;
@@ -100,6 +108,25 @@ class HomeProvider extends ChangeNotifier {
           ? await _repository.markDone(habitId, today)
           : await _repository.markDoneWithPhoto(habitId, today, photo);
       _remember(log, photo);
+      _applyLog(habitId, log);
+      return null;
+    } catch (e) {
+      return _messageFor(e);
+    } finally {
+      _saving.remove(habitId);
+    }
+  }
+
+  /// Marca un hábito como omitido hoy.
+  /// Devuelve null si salió bien, o el mensaje de error para mostrarlo.
+  Future<String?> markSkipped(String habitId) async {
+    if (!_saving.add(habitId)) return null;
+
+    try {
+      final today = _clock();
+      // Busca el TodayHabit correspondiente para validar allowSkip.
+      final todayHabit = _habits.firstWhere((h) => h.habit.id == habitId);
+      final log = await _repository.markSkipped(todayHabit, today);
       _applyLog(habitId, log);
       return null;
     } catch (e) {

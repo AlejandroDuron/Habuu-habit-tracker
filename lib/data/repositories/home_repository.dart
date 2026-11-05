@@ -167,6 +167,16 @@ class HomeRepository {
     });
   }
 
+  /// Invalida el día [day] en [daily_summaries] poniéndolo como incompleto.
+  ///
+  /// Llamar cuando se añade un hábito nuevo a un día que ya estaba marcado
+  /// como completado, para que la racha no cuente ese día prematuramente.
+  void markDayIncomplete(DateTime day) {
+    _dailySummary.markDayIncomplete(day).catchError((e) {
+      debugPrint('No se pudo invalidar el resumen diario: $e');
+    });
+  }
+
   Future<void> _deleteQuietly(String path) async {
     try {
       await _evidence.delete(path);
